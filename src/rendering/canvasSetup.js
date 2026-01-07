@@ -46,7 +46,14 @@ export function setupResizeHandler(canvas, onResize) {
       const newWidth = rect.width
       const newHeight = rect.height
 
-      if (newWidth !== currentWidth || newHeight !== currentHeight) {
+      // Only trigger resize if dimensions actually changed significantly
+      // On iOS, the address bar showing/hiding causes small height changes
+      // which we want to ignore to prevent particle resets during scroll
+      const widthChanged = newWidth !== currentWidth
+      const heightDiff = Math.abs(newHeight - currentHeight)
+      const significantHeightChange = heightDiff > 100 // Ignore small changes from iOS address bar
+
+      if (widthChanged || significantHeightChange) {
         const oldWidth = currentWidth
         const oldHeight = currentHeight
 
