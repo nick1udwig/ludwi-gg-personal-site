@@ -154,13 +154,19 @@ h1, h2, h3 {
   display: block;
 }
 
-/* --- View Toggle --- */
-.view-toggle {
+/* --- Top Left Controls (Social + View Toggle) --- */
+.top-left-controls {
   position: absolute;
   top: 1.5rem;
   left: 1.5rem;
-  width: 44px;
-  height: 44px;
+  display: flex;
+  gap: 0.625rem;
+  z-index: 100;
+}
+
+.control-btn {
+  width: 40px;
+  height: 40px;
   padding: 0;
   display: flex;
   align-items: center;
@@ -169,24 +175,24 @@ h1, h2, h3 {
   border: 1px solid var(--dial-border);
   border-radius: 50%;
   box-shadow: var(--dial-shadow);
+  color: var(--text-secondary);
+  text-decoration: none;
   cursor: pointer;
-  z-index: 100;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s ease, color 0.15s ease;
 }
 
-.view-toggle:hover {
-  transform: scale(1.05);
+.control-btn:hover {
+  transform: scale(1.08);
+  color: var(--text-primary);
 }
 
-.view-toggle:active {
+.control-btn:active {
   transform: scale(0.95);
 }
 
-.toggle-icon {
-  width: 24px;
-  height: 24px;
-  color: var(--text-secondary);
-  transition: opacity 0.2s ease;
+.control-icon {
+  width: 20px;
+  height: 20px;
 }
 
 /* Show atom icon by default (particle view), hide potential icon */
@@ -199,26 +205,30 @@ h1, h2, h3 {
 }
 
 /* When in potential view, swap icons */
-.view-toggle.potential-active .icon-atom {
+.control-btn.potential-active .icon-atom {
   display: none;
 }
 
-.view-toggle.potential-active .icon-potential {
+.control-btn.potential-active .icon-potential {
   display: block;
 }
 
 /* Mobile adjustments */
 @media (max-width: 480px) {
-  .view-toggle {
+  .top-left-controls {
     top: 1rem;
     left: 1rem;
-    width: 40px;
-    height: 40px;
+    gap: 0.5rem;
   }
 
-  .toggle-icon {
-    width: 20px;
-    height: 20px;
+  .control-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .control-icon {
+    width: 18px;
+    height: 18px;
   }
 }
 
