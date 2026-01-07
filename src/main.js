@@ -105,39 +105,22 @@ async function init() {
   // Click to toggle view (desktop)
   canvas.addEventListener('click', toggleView)
 
-  // Touch events (mobile) - distinguish tap from drag/hold
+  // Touch events (mobile) - repulsion on drag, tap to toggle
   let touchStartX = 0
   let touchStartY = 0
-  let touchStartTime = 0
-  let touchMoved = false
-  const TAP_THRESHOLD = 10       // pixels - if moved more than this, it's a drag
-  const TAP_TIME_THRESHOLD = 200 // ms - if held longer, it's a hold (not a tap)
+  const TAP_THRESHOLD = 10 // pixels - if moved more than this, it's a drag
 
   canvas.addEventListener('touchstart', (e) => {
     if (e.touches.length === 1) {
-      const touch = e.touches[0]
-      touchStartX = touch.clientX
-      touchStartY = touch.clientY
-      touchStartTime = Date.now()
-      touchMoved = false
-
-      // Start repulsion immediately on touch
-      const { x, y } = getCanvasCoords(touch.clientX, touch.clientY)
-      simulation.setPointer(x, y)
+      touchStartX = e.touches[0].clientX
+      touchStartY = e.touches[0].clientY
     }
   }, { passive: true })
 
   canvas.addEventListener('touchmove', (e) => {
     if (e.touches.length === 1) {
       const touch = e.touches[0]
-      const dx = Math.abs(touch.clientX - touchStartX)
-      const dy = Math.abs(touch.clientY - touchStartY)
-
-      if (dx > TAP_THRESHOLD || dy > TAP_THRESHOLD) {
-        touchMoved = true
-      }
-
-      // Update repulsion position
+      // Update repulsion position while dragging
       const { x, y } = getCanvasCoords(touch.clientX, touch.clientY)
       simulation.setPointer(x, y)
     }
@@ -150,12 +133,13 @@ async function init() {
     // Prevent double-firing on devices that fire both touch and click
     e.preventDefault()
 
-    // Only toggle if it was a quick tap (not a drag or hold)
+    // Only toggle if it was a tap (not a drag)
     if (e.changedTouches.length === 1) {
-      const touchDuration = Date.now() - touchStartTime
-      const wasTap = !touchMoved && touchDuration < TAP_TIME_THRESHOLD
+      const touch = e.changedTouches[0]
+      const dx = Math.abs(touch.clientX - touchStartX)
+      const dy = Math.abs(touch.clientY - touchStartY)
 
-      if (wasTap) {
+      if (dx < TAP_THRESHOLD && dy < TAP_THRESHOLD) {
         toggleView()
       }
     }
