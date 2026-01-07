@@ -26,8 +26,11 @@ export async function generatePotentialView(text, imagePath, canvasWidth, canvas
   canvas.width = canvasWidth
   canvas.height = canvasHeight
 
-  // Calculate font size
-  const fontSize = calculateFontSize(ctx, text, canvasWidth * 0.85, canvasHeight * 0.25)
+  // Calculate font size - allow larger on desktop
+  // On desktop (wider screens), we can use more height for text
+  const isDesktop = canvasWidth >= 768
+  const maxTextHeight = isDesktop ? canvasHeight * 0.18 : canvasHeight * 0.15
+  const fontSize = calculateFontSize(ctx, text, canvasWidth * 0.9, maxTextHeight)
 
   // Draw text
   ctx.fillStyle = particleColor
@@ -35,7 +38,7 @@ export async function generatePotentialView(text, imagePath, canvasWidth, canvas
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
 
-  const textY = canvasHeight * 0.22
+  const textY = canvasHeight * 0.15
   ctx.fillText(text, canvasWidth / 2, textY)
 
   // Load and draw headshot
@@ -43,8 +46,8 @@ export async function generatePotentialView(text, imagePath, canvasWidth, canvas
     try {
       const img = await loadImage(imagePath)
 
-      const imgMaxHeight = canvasHeight * 0.55
-      const imgMaxWidth = canvasWidth * 0.5
+      const imgMaxHeight = canvasHeight * 0.65
+      const imgMaxWidth = canvasWidth * 0.55
       const imgAspect = img.width / img.height
 
       let imgWidth, imgHeight
@@ -57,7 +60,7 @@ export async function generatePotentialView(text, imagePath, canvasWidth, canvas
       }
 
       const imgX = (canvasWidth - imgWidth) / 2
-      const imgY = canvasHeight * 0.38
+      const imgY = canvasHeight * 0.28
 
       ctx.drawImage(img, imgX, imgY, imgWidth, imgHeight)
     } catch (e) {
@@ -94,8 +97,10 @@ export async function generateTargets(text, imagePath, canvasWidth, canvasHeight
   ctx.fillStyle = '#000'
   ctx.fillRect(0, 0, width, height)
 
-  // Calculate font size to fit text nicely
-  const fontSize = calculateFontSize(ctx, text, width * 0.85, height * 0.25)
+  // Calculate font size - match potential view sizing
+  const isDesktop = width >= 768 * scale
+  const maxTextHeight = isDesktop ? height * 0.18 : height * 0.15
+  const fontSize = calculateFontSize(ctx, text, width * 0.9, maxTextHeight)
 
   // Draw text centered in upper portion
   ctx.fillStyle = '#fff'
@@ -103,7 +108,7 @@ export async function generateTargets(text, imagePath, canvasWidth, canvasHeight
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
 
-  const textY = height * 0.22
+  const textY = height * 0.15
   ctx.fillText(text, width / 2, textY)
 
   // Load and draw headshot below text
@@ -111,9 +116,9 @@ export async function generateTargets(text, imagePath, canvasWidth, canvasHeight
     try {
       const img = await loadImage(imagePath)
 
-      // Calculate image size and position
-      const imgMaxHeight = height * 0.55
-      const imgMaxWidth = width * 0.5
+      // Calculate image size and position - match potential view
+      const imgMaxHeight = height * 0.65
+      const imgMaxWidth = width * 0.55
       const imgAspect = img.width / img.height
 
       let imgWidth, imgHeight
@@ -126,7 +131,7 @@ export async function generateTargets(text, imagePath, canvasWidth, canvasHeight
       }
 
       const imgX = (width - imgWidth) / 2
-      const imgY = height * 0.38
+      const imgY = height * 0.28
 
       // Draw image to canvas
       ctx.drawImage(img, imgX, imgY, imgWidth, imgHeight)
@@ -135,7 +140,7 @@ export async function generateTargets(text, imagePath, canvasWidth, canvasHeight
       // Fallback: draw a square
       const squareSize = Math.min(width, height) * 0.3
       const squareX = (width - squareSize) / 2
-      const squareY = height * 0.45
+      const squareY = height * 0.35
       ctx.fillRect(squareX, squareY, squareSize, squareSize)
     }
   }
@@ -147,8 +152,8 @@ export async function generateTargets(text, imagePath, canvasWidth, canvasHeight
   const textPixels = []
   const imagePixels = []
 
-  // Dividing line between text and image region (text is in top ~35%)
-  const textBottomY = height * 0.35
+  // Dividing line between text and image region (text is in top ~25%)
+  const textBottomY = height * 0.25
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
@@ -227,19 +232,21 @@ export function generateTargetsSimple(text, canvasWidth, canvasHeight, particleC
 
 /**
  * Calculate optimal font size to fit text within width
+ * Uses binary search for accuracy
  */
 function calculateFontSize(ctx, text, maxWidth, maxHeight) {
-  let fontSize = 100
+  // Start with a large font and scale to fit
+  let fontSize = 200
 
   ctx.font = `bold ${fontSize}px Impact, Arial Black, sans-serif`
   let metrics = ctx.measureText(text)
 
-  // Scale down if too wide
+  // Scale to fit width
   if (metrics.width > maxWidth) {
     fontSize = Math.floor(fontSize * (maxWidth / metrics.width))
   }
 
-  // Also check height
+  // Cap at maxHeight
   if (fontSize > maxHeight) {
     fontSize = Math.floor(maxHeight)
   }

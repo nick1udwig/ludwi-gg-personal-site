@@ -20,11 +20,23 @@ async function init() {
     return
   }
 
+  // Detect mobile for lower default temperature
+  const isMobile = window.innerWidth < 768
+  const defaultTemp = isMobile ? 10 : 15
+
+  // Update slider to match
+  if (temperatureSlider) {
+    temperatureSlider.value = defaultTemp
+    if (tempValueDisplay) {
+      tempValueDisplay.textContent = defaultTemp
+    }
+  }
+
   // Create particle system
   const simulation = new ParticleSystem(canvas, {
     text: 'NICK LUDWIG',
     imagePath: '/headshot.png',
-    initialTemperature: parseInt(temperatureSlider?.value || '15', 10),
+    initialTemperature: defaultTemp,
     onSettled: () => {
       // Show scroll indicator when particles settle
       if (scrollIndicator) {
