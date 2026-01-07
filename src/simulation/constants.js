@@ -16,7 +16,7 @@ export const RENDERING = {
 
 // Responsive particle counts
 export const RESPONSIVE = {
-  MOBILE: 700,              // < 480px
+  MOBILE: 600,              // < 480px
   TABLET: 1000,             // < 768px
   DESKTOP: 1500,            // < 1200px
   LARGE: 2000,              // >= 1200px

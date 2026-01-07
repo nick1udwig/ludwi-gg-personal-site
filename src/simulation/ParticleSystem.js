@@ -35,7 +35,7 @@ export class ParticleSystem {
     // Create game loop
     this.gameLoop = new GameLoop(
       (dt) => this.update(dt),
-      (alpha) => this.render(alpha)
+      (alpha, dt) => this.render(alpha, dt)
     )
 
     // Setup resize handler
@@ -128,9 +128,9 @@ export class ParticleSystem {
   /**
    * Render (called every frame with interpolation)
    */
-  render(alpha) {
+  render(alpha, dt = 1 / 60) {
     if (!this.initialized) return
-    this.renderer.render(this.particles, alpha)
+    this.renderer.render(this.particles, alpha, dt)
   }
 
   /**

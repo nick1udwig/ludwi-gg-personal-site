@@ -21,6 +21,12 @@ export class Renderer {
     this.showPotentialView = false
     this.potentialImage = null
 
+    // Transition animation state
+    this.transitionProgress = 0 // 0 = particles, 1 = potential
+    this.transitionTarget = 0
+    this.transitionSpeed = 4 // Units per second (0.25s for full transition)
+    this.isTransitioning = false
+
     // Detect initial theme
     this.updateTheme()
 
@@ -59,7 +65,27 @@ export class Renderer {
    */
   togglePotentialView() {
     this.showPotentialView = !this.showPotentialView
+    this.transitionTarget = this.showPotentialView ? 1 : 0
+    this.isTransitioning = true
     return this.showPotentialView
+  }
+
+  /**
+   * Update transition animation
+   * @param {number} dt - Delta time in seconds
+   */
+  updateTransition(dt) {
+    if (!this.isTransitioning) return
+
+    const diff = this.transitionTarget - this.transitionProgress
+    const step = this.transitionSpeed * dt
+
+    if (Math.abs(diff) <= step) {
+      this.transitionProgress = this.transitionTarget
+      this.isTransitioning = false
+    } else {
+      this.transitionProgress += Math.sign(diff) * step
+    }
   }
 
   /**
@@ -80,38 +106,46 @@ export class Renderer {
    * Render all particles with interpolation for smooth animation
    * @param {ParticleData} particles
    * @param {number} alpha - Interpolation factor (0-1) between physics states
+   * @param {number} dt - Delta time for transition animation
    */
-  render(particles, alpha = 1) {
+  render(particles, alpha = 1, dt = 1 / 60) {
     const { ctx, width, height, particleColor } = this
+
+    // Update transition animation
+    this.updateTransition(dt)
 
     // Clear canvas
     ctx.clearRect(0, 0, width, height)
 
-    // If showing potential view, draw the pre-rendered image instead
-    if (this.showPotentialView && this.potentialImage) {
+    const t = this.transitionProgress
+
+    // Draw particles layer (fades out as t approaches 1)
+    if (t < 1) {
+      const { count, posX, posY, prevX, prevY } = particles
+      const radius = RENDERING.PARTICLE_RADIUS
+
+      ctx.save()
+      ctx.globalAlpha = 1 - t
+      ctx.fillStyle = particleColor
+      ctx.beginPath()
+
+      for (let i = 0; i < count; i++) {
+        const x = prevX[i] + (posX[i] - prevX[i]) * alpha
+        const y = prevY[i] + (posY[i] - prevY[i]) * alpha
+        ctx.rect(x - radius, y - radius, radius * 2, radius * 2)
+      }
+
+      ctx.fill()
+      ctx.restore()
+    }
+
+    // Draw potential view layer (fades in as t approaches 1)
+    if (t > 0 && this.potentialImage) {
+      ctx.save()
+      ctx.globalAlpha = t
       ctx.drawImage(this.potentialImage, 0, 0, width, height)
-      return
+      ctx.restore()
     }
-
-    const { count, posX, posY, prevX, prevY } = particles
-    const radius = RENDERING.PARTICLE_RADIUS
-
-    // Set fill style once for all particles
-    ctx.fillStyle = particleColor
-
-    // Batch render all particles as rectangles (faster than arcs)
-    ctx.beginPath()
-
-    for (let i = 0; i < count; i++) {
-      // Interpolate position for smooth rendering
-      const x = prevX[i] + (posX[i] - prevX[i]) * alpha
-      const y = prevY[i] + (posY[i] - prevY[i]) * alpha
-
-      // Draw as small rectangle
-      ctx.rect(x - radius, y - radius, radius * 2, radius * 2)
-    }
-
-    ctx.fill()
   }
 
   /**

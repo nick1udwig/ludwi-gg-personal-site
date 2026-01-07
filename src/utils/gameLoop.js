@@ -8,7 +8,7 @@ import { PHYSICS, RENDERING } from '../simulation/constants.js'
 export class GameLoop {
   constructor(onUpdate, onRender) {
     this.onUpdate = onUpdate      // (dt) => void - Fixed timestep physics update
-    this.onRender = onRender      // (alpha) => void - Render with interpolation
+    this.onRender = onRender      // (alpha, dt) => void - Render with interpolation
 
     this.dt = PHYSICS.DT          // Fixed physics timestep (1/60 second)
     this.maxFrameTime = 0.25      // Cap to prevent spiral of death
@@ -50,8 +50,8 @@ export class GameLoop {
     // Calculate interpolation alpha for smooth rendering
     const alpha = this.accumulator / this.dt
 
-    // Render with interpolation
-    this.onRender(alpha)
+    // Render with interpolation (pass frameTime for transition animations)
+    this.onRender(alpha, frameTime)
 
     // Schedule next frame
     this.rafId = requestAnimationFrame(this.tick)
