@@ -55,11 +55,25 @@ async function init() {
     })
   }
 
+  // Track if user has ever toggled the view
+  let hasToggledView = false
+
+  // Add hint shine animation to view toggle button
+  if (viewToggle) {
+    viewToggle.classList.add('hint-shine')
+  }
+
   // Function to toggle view and update button state
   function toggleView() {
     const isPotentialView = simulation.toggleView()
     if (viewToggle) {
       viewToggle.classList.toggle('potential-active', isPotentialView)
+
+      // Remove shine hint after first interaction
+      if (!hasToggledView) {
+        hasToggledView = true
+        viewToggle.classList.remove('hint-shine')
+      }
     }
   }
 

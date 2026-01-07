@@ -216,6 +216,49 @@ h1, h2, h3 {
   display: block;
 }
 
+/* Shine animation for view toggle hint */
+.control-btn.hint-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.control-btn.hint-shine::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -100%;
+  width: 50%;
+  height: 200%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  transform: skewX(-20deg);
+  animation: hintShine 3s ease-in-out infinite;
+  animation-delay: 2s;
+  pointer-events: none;
+}
+
+@keyframes hintShine {
+  0%, 100% {
+    left: -100%;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  40% {
+    left: 150%;
+    opacity: 1;
+  }
+  50%, 100% {
+    left: 150%;
+    opacity: 0;
+  }
+}
+
 /* Mobile adjustments */
 @media (max-width: 480px) {
   .top-left-controls {
