@@ -17,6 +17,24 @@
   <section id="hero" class="simulation-section">
     <canvas id="particle-canvas" aria-label="Interactive particle physics simulation forming the text NICK LUDWIG"></canvas>
 
+    <!-- View Toggle -->
+    <button id="view-toggle" class="view-toggle" aria-label="Toggle between particle and potential view">
+      <!-- Atom icon (particle view) -->
+      <svg class="toggle-icon icon-atom" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="12" cy="12" r="2.5"/>
+        <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(0 12 12)"/>
+        <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/>
+        <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(-60 12 12)"/>
+      </svg>
+      <!-- Potential/field icon (potential view) -->
+      <svg class="toggle-icon icon-potential" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M12 3v18"/>
+        <path d="M5 8c2-3 5-4 7-4s5 1 7 4"/>
+        <path d="M5 16c2 3 5 4 7 4s5-1 7-4"/>
+        <circle cx="12" cy="12" r="2" fill="currentColor"/>
+      </svg>
+    </button>
+
     <!-- Temperature Control -->
     <div class="temperature-control">
       <label for="temperature" class="temperature-label">

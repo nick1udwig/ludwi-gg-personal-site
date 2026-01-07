@@ -146,6 +146,74 @@ h1, h2, h3 {
   display: block;
 }
 
+/* --- View Toggle --- */
+.view-toggle {
+  position: absolute;
+  top: 1.5rem;
+  left: 1.5rem;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--dial-bg);
+  border: 1px solid var(--dial-border);
+  border-radius: 50%;
+  box-shadow: var(--dial-shadow);
+  cursor: pointer;
+  z-index: 100;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.view-toggle:hover {
+  transform: scale(1.05);
+}
+
+.view-toggle:active {
+  transform: scale(0.95);
+}
+
+.toggle-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--text-secondary);
+  transition: opacity 0.2s ease;
+}
+
+/* Show atom icon by default (particle view), hide potential icon */
+.icon-atom {
+  display: block;
+}
+
+.icon-potential {
+  display: none;
+}
+
+/* When in potential view, swap icons */
+.view-toggle.potential-active .icon-atom {
+  display: none;
+}
+
+.view-toggle.potential-active .icon-potential {
+  display: block;
+}
+
+/* Mobile adjustments */
+@media (max-width: 480px) {
+  .view-toggle {
+    top: 1rem;
+    left: 1rem;
+    width: 40px;
+    height: 40px;
+  }
+
+  .toggle-icon {
+    width: 20px;
+    height: 20px;
+  }
+}
+
 /* --- Temperature Control --- */
 .temperature-control {
   position: absolute;

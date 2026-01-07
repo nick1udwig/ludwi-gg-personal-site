@@ -14,6 +14,7 @@ async function init() {
   const temperatureSlider = document.getElementById('temperature')
   const tempValueDisplay = document.querySelector('.temp-value')
   const scrollIndicator = document.querySelector('.scroll-indicator')
+  const viewToggle = document.getElementById('view-toggle')
 
   if (!canvas) {
     console.error('Canvas element not found')
@@ -61,17 +62,31 @@ async function init() {
     })
   }
 
-  // Click/tap to toggle between particle view and potential view
-  canvas.addEventListener('click', () => {
-    simulation.toggleView()
-  })
+  // Function to toggle view and update button state
+  function toggleView() {
+    const isPotentialView = simulation.toggleView()
+    if (viewToggle) {
+      viewToggle.classList.toggle('potential-active', isPotentialView)
+    }
+  }
 
-  // Also support touch
+  // Click/tap canvas to toggle between particle view and potential view
+  canvas.addEventListener('click', toggleView)
+
+  // Also support touch on canvas
   canvas.addEventListener('touchend', (e) => {
     // Prevent double-firing on devices that fire both touch and click
     e.preventDefault()
-    simulation.toggleView()
+    toggleView()
   })
+
+  // Toggle button click
+  if (viewToggle) {
+    viewToggle.addEventListener('click', (e) => {
+      e.stopPropagation() // Don't trigger canvas click
+      toggleView()
+    })
+  }
 
   // Add cursor style to indicate clickability
   canvas.style.cursor = 'pointer'
