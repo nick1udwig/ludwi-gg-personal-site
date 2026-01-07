@@ -13,7 +13,6 @@ async function init() {
   const canvas = document.getElementById('particle-canvas')
   const temperatureSlider = document.getElementById('temperature')
   const tempValueDisplay = document.querySelector('.temp-value')
-  const scrollIndicator = document.querySelector('.scroll-indicator')
   const viewToggle = document.getElementById('view-toggle')
 
   if (!canvas) {
@@ -37,13 +36,7 @@ async function init() {
   const simulation = new ParticleSystem(canvas, {
     text: 'NICK LUDWIG',
     imagePath: '/headshot.png',
-    initialTemperature: defaultTemp,
-    onSettled: () => {
-      // Show scroll indicator when particles settle
-      if (scrollIndicator) {
-        scrollIndicator.style.animationPlayState = 'running'
-      }
-    }
+    initialTemperature: defaultTemp
   })
 
   // Initialize asynchronously (loads image)
