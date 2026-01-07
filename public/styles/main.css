@@ -189,8 +189,18 @@ h1, h2, h3 {
   color: var(--text-primary);
 }
 
-.control-btn:active {
-  transform: scale(0.95);
+@media (hover: hover) {
+  /* Only apply active scale on devices with hover (desktop) */
+  .control-btn:active {
+    transform: scale(0.95);
+  }
+}
+
+/* On touch devices, skip the transform animation to avoid lag */
+@media (hover: none) {
+  .control-btn {
+    transition: color 0.15s ease;
+  }
 }
 
 .control-icon {
