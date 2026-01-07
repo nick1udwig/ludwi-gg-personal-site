@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite'
+import blogPlugin from './vite-plugin-blog.js'
 
 export default defineConfig({
+  plugins: [blogPlugin()],
   root: '.',
   publicDir: 'public',
   build: {
