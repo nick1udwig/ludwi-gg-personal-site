@@ -6,7 +6,7 @@
 import { ParticleData } from './particles.js'
 import { updatePhysics, areParticlesSettled } from './physics.js'
 import { generateTargets, generateTargetsSimple } from './potentialField.js'
-import { getParticleCount, RESPONSIVE } from './constants.js'
+import { getParticleCount, RESPONSIVE, PHYSICS } from './constants.js'
 import { Renderer } from '../rendering/Renderer.js'
 import { setupCanvas, setupResizeHandler } from '../rendering/canvasSetup.js'
 import { GameLoop } from '../utils/gameLoop.js'
@@ -88,11 +88,16 @@ export class ParticleSystem {
 
   /**
    * Physics update (called at fixed timestep)
+   * Runs multiple steps per frame for faster convergence
    */
   update(dt) {
     if (!this.initialized) return
 
-    updatePhysics(this.particles, this.temperature, dt)
+    // Run multiple physics steps per frame for faster convergence
+    const steps = PHYSICS.STEPS_PER_FRAME || 1
+    for (let i = 0; i < steps; i++) {
+      updatePhysics(this.particles, this.temperature)
+    }
 
     // Check if particles have settled
     if (!this.hasSettled && areParticlesSettled(this.particles, 0.3)) {

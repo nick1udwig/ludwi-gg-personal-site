@@ -1,11 +1,11 @@
 // Physics constants - tunable parameters
 export const PHYSICS = {
-  SPRING_K: 0.5,            // Attraction strength to target (higher = faster settling)
-  DAMPING: 0.85,            // Velocity retention per frame (lower = more friction, faster settling)
-  BASE_TEMPERATURE: 0.2,    // Minimum thermal noise
-  MAX_TEMPERATURE: 8,       // Maximum slider value effect
-  DT: 1 / 60,               // Physics timestep (60 Hz)
-  MASS: 1,                  // Uniform particle mass
+  SPRING_K: 0.08,           // Pull toward target per frame (0.05-0.15 works well)
+  DAMPING: 0.85,            // Velocity retention (0.8-0.9 for smooth, lower = faster stop)
+  BASE_TEMPERATURE: 0.1,    // Minimum jitter amplitude
+  MAX_TEMPERATURE: 3,       // Maximum jitter at full temperature
+  DT: 1 / 60,               // Physics timestep (for game loop timing)
+  STEPS_PER_FRAME: 3,       // Run multiple physics updates per render
 }
 
 export const RENDERING = {
@@ -16,10 +16,10 @@ export const RENDERING = {
 
 // Responsive particle counts
 export const RESPONSIVE = {
-  MOBILE: 600,              // < 480px
-  TABLET: 1200,             // < 768px
-  DESKTOP: 2000,            // < 1200px
-  LARGE: 2800,              // >= 1200px
+  MOBILE: 500,              // < 480px
+  TABLET: 1000,             // < 768px
+  DESKTOP: 1500,            // < 1200px
+  LARGE: 2000,              // >= 1200px
 }
 
 // Get particle count based on screen width

@@ -70,14 +70,8 @@ export class Renderer {
     // Clear canvas
     ctx.clearRect(0, 0, width, height)
 
-    // Apply glow effect in dark mode
-    if (isDarkMode) {
-      ctx.shadowColor = glowColor
-      ctx.shadowBlur = 6
-    } else {
-      ctx.shadowColor = 'transparent'
-      ctx.shadowBlur = 0
-    }
+    // NOTE: shadowBlur removed for performance - it's extremely expensive
+    // The glow effect looked nice but cost ~10x performance
 
     // Set fill style once for all particles
     ctx.fillStyle = particleColor
@@ -95,12 +89,6 @@ export class Renderer {
     }
 
     ctx.fill()
-
-    // Reset shadow for other rendering
-    if (isDarkMode) {
-      ctx.shadowColor = 'transparent'
-      ctx.shadowBlur = 0
-    }
   }
 
   /**

@@ -1,6 +1,6 @@
 /**
- * Physics simulation using Velocity Verlet integration
- * Forces: Spring attraction + Damping + Brownian motion
+ * Physics simulation - simplified for performance
+ * Uses direct interpolation toward targets with noise
  */
 
 import { PHYSICS } from './constants.js'
@@ -8,38 +8,29 @@ import { fastGaussian } from '../utils/random.js'
 
 /**
  * Update physics for all particles
- * @param {ParticleData} particles - The particle data structure
- * @param {number} temperature - Current temperature (0-100 from slider)
- * @param {number} dt - Time step
+ * Uses simple interpolation + momentum + noise (no dt² scaling)
  */
-export function updatePhysics(particles, temperature, dt = PHYSICS.DT) {
+export function updatePhysics(particles, temperature) {
   const { count, posX, posY, prevX, prevY, targetX, targetY } = particles
 
-  // Scale temperature from slider (0-100) to physics scale
-  const tempScale = PHYSICS.BASE_TEMPERATURE + (temperature / 100) * PHYSICS.MAX_TEMPERATURE
-  const noiseScale = Math.sqrt(2 * tempScale * dt)
+  // Scale temperature from slider (0-100) to noise amplitude
+  const noiseAmp = PHYSICS.BASE_TEMPERATURE + (temperature / 100) * PHYSICS.MAX_TEMPERATURE
 
-  const springK = PHYSICS.SPRING_K
-  const damping = PHYSICS.DAMPING
-  const dt2 = dt * dt
+  const pull = PHYSICS.SPRING_K      // How fast to move toward target (0-1)
+  const momentum = PHYSICS.DAMPING   // How much velocity to retain (0-1)
 
   for (let i = 0; i < count; i++) {
-    // Current velocity (implicit from Verlet)
+    // Current velocity (from previous frame)
     const velX = posX[i] - prevX[i]
     const velY = posY[i] - prevY[i]
 
-    // Spring force toward target
+    // Vector toward target
     const dx = targetX[i] - posX[i]
     const dy = targetY[i] - posY[i]
 
-    // Total acceleration = spring + Brownian noise
-    const ax = springK * dx + noiseScale * fastGaussian()
-    const ay = springK * dy + noiseScale * fastGaussian()
-
-    // Verlet integration with damping
-    // new_pos = pos + damping * velocity + acceleration * dt^2
-    const newX = posX[i] + damping * velX + ax * dt2
-    const newY = posY[i] + damping * velY + ay * dt2
+    // New position = current + momentum*velocity + pull*towardTarget + noise
+    const newX = posX[i] + momentum * velX + pull * dx + noiseAmp * fastGaussian()
+    const newY = posY[i] + momentum * velY + pull * dy + noiseAmp * fastGaussian()
 
     // Update positions
     prevX[i] = posX[i]
@@ -51,7 +42,6 @@ export function updatePhysics(particles, temperature, dt = PHYSICS.DT) {
 
 /**
  * Check if particles have mostly settled (for triggering scroll indicator)
- * @returns {boolean} True if average velocity is below threshold
  */
 export function areParticlesSettled(particles, threshold = 0.5) {
   const { count, posX, posY, prevX, prevY } = particles
