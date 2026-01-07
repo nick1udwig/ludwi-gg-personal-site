@@ -1,0 +1,193 @@
+/**
+ * Main particle system orchestrator
+ * Coordinates particles, physics, rendering, and user input
+ */
+
+import { ParticleData } from './particles.js'
+import { updatePhysics, areParticlesSettled } from './physics.js'
+import { generateTargets } from './potentialField.js'
+import { getParticleCount, RESPONSIVE } from './constants.js'
+import { Renderer } from '../rendering/Renderer.js'
+import { setupCanvas, setupResizeHandler } from '../rendering/canvasSetup.js'
+import { GameLoop } from '../utils/gameLoop.js'
+import { refreshRandomTable } from '../utils/random.js'
+
+export class ParticleSystem {
+  constructor(canvas, options = {}) {
+    this.canvas = canvas
+    this.text = options.text || 'NICK LUDWIG'
+    this.temperature = options.initialTemperature || 15
+
+    // Initialize canvas
+    const { width, height } = setupCanvas(canvas)
+    this.width = width
+    this.height = height
+
+    // Create renderer
+    this.renderer = new Renderer(canvas)
+    this.renderer.setDimensions(width, height)
+
+    // Create particles
+    const particleCount = getParticleCount(width)
+    this.particles = new ParticleData(Math.max(...Object.values(RESPONSIVE)))
+    this.particles.initializeGrid(width, height, particleCount)
+
+    // Generate targets (text + square shape)
+    const targets = generateTargets(this.text, width, height, particleCount)
+    this.particles.setTargets(targets)
+    this.currentTargets = targets
+
+    // Create game loop
+    this.gameLoop = new GameLoop(
+      (dt) => this.update(dt),
+      (alpha) => this.render(alpha)
+    )
+
+    // Setup resize handler
+    this.cleanupResize = setupResizeHandler(canvas, (oldW, oldH, newW, newH) => {
+      this.handleResize(oldW, oldH, newW, newH)
+    })
+
+    // Visibility handling
+    this.setupVisibilityHandler()
+
+    // Check for reduced motion preference
+    this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    // Track if particles have settled (for scroll indicator)
+    this.hasSettled = false
+    this.onSettled = options.onSettled || null
+  }
+
+  /**
+   * Physics update (called at fixed timestep)
+   */
+  update(dt) {
+    updatePhysics(this.particles, this.temperature, dt)
+
+    // Check if particles have settled
+    if (!this.hasSettled && areParticlesSettled(this.particles, 0.3)) {
+      this.hasSettled = true
+      if (this.onSettled) {
+        this.onSettled()
+      }
+    }
+  }
+
+  /**
+   * Render (called every frame with interpolation)
+   */
+  render(alpha) {
+    this.renderer.render(this.particles, alpha)
+  }
+
+  /**
+   * Handle window resize
+   */
+  handleResize(oldWidth, oldHeight, newWidth, newHeight) {
+    this.width = newWidth
+    this.height = newHeight
+    this.renderer.setDimensions(newWidth, newHeight)
+
+    // Check if particle count should change
+    const oldCount = this.particles.count
+    const newCount = getParticleCount(newWidth)
+
+    if (newCount !== oldCount) {
+      // Regenerate everything for new particle count
+      this.particles.initializeGrid(newWidth, newHeight, newCount)
+      const targets = generateTargets(this.text, newWidth, newHeight, newCount)
+      this.particles.setTargets(targets)
+      this.currentTargets = targets
+      this.hasSettled = false
+    } else {
+      // Just scale existing positions
+      this.particles.resize(oldWidth, oldHeight, newWidth, newHeight)
+    }
+
+    // Refresh random table occasionally
+    refreshRandomTable()
+  }
+
+  /**
+   * Setup visibility change handler to pause when hidden
+   */
+  setupVisibilityHandler() {
+    // Intersection Observer for scroll-based visibility
+    this.observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            this.resume()
+          } else {
+            this.pause()
+          }
+        })
+      },
+      { threshold: 0.1 }
+    )
+    this.observer.observe(this.canvas.parentElement)
+
+    // Document visibility for tab switching
+    this.visibilityHandler = () => {
+      if (document.hidden) {
+        this.pause()
+      } else {
+        this.resume()
+      }
+    }
+    document.addEventListener('visibilitychange', this.visibilityHandler)
+  }
+
+  /**
+   * Set temperature (0-100)
+   */
+  setTemperature(value) {
+    this.temperature = Math.max(0, Math.min(100, value))
+  }
+
+  /**
+   * Start the simulation
+   */
+  start() {
+    if (this.prefersReducedMotion) {
+      // Skip animation, show final state immediately
+      this.particles.snapToTargets()
+      this.renderer.render(this.particles, 1)
+      this.hasSettled = true
+      if (this.onSettled) {
+        this.onSettled()
+      }
+      return
+    }
+
+    this.gameLoop.start()
+  }
+
+  /**
+   * Pause simulation (e.g., when scrolled out of view)
+   */
+  pause() {
+    this.gameLoop.stop()
+  }
+
+  /**
+   * Resume simulation
+   */
+  resume() {
+    if (!this.prefersReducedMotion && !document.hidden) {
+      this.gameLoop.start()
+    }
+  }
+
+  /**
+   * Cleanup
+   */
+  destroy() {
+    this.gameLoop.stop()
+    this.cleanupResize()
+    this.observer.disconnect()
+    document.removeEventListener('visibilitychange', this.visibilityHandler)
+    this.renderer.destroy()
+  }
+}

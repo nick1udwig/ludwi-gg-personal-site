@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nick Ludwig</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Playfair+Display:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/styles/main.css">
+</head>
+<body>
+  <!-- Hero: Particle Simulation -->
+  <section id="hero" class="simulation-section">
+    <canvas id="particle-canvas" aria-label="Interactive particle physics simulation forming the text NICK LUDWIG"></canvas>
+
+    <!-- Temperature Control -->
+    <div class="temperature-control">
+      <label for="temperature" class="temperature-label">
+        <span class="temp-text">T</span>
+      </label>
+      <input
+        type="range"
+        id="temperature"
+        min="0"
+        max="100"
+        value="15"
+        class="temperature-slider"
+        aria-label="Temperature: controls particle vibration intensity"
+      >
+      <div class="temp-indicator">
+        <span class="temp-value">15</span>
+        <span class="temp-unit">K</span>
+      </div>
+    </div>
+
+    <!-- Scroll Indicator -->
+    <div class="scroll-indicator" aria-hidden="true">
+      <span class="scroll-text">scroll</span>
+      <svg class="scroll-chevron" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M6 9l6 6 6-6"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- Divider: Oscilloscope Wave -->
+  <div class="wave-divider" aria-hidden="true">
+    <svg viewBox="0 0 1200 60" preserveAspectRatio="none">
+      <path class="wave-path" d="M0,30 Q50,10 100,30 T200,30 T300,30 T400,30 T500,30 T600,30 T700,30 T800,30 T900,30 T1000,30 T1100,30 T1200,30" />
+    </svg>
+  </div>
+
+  <!-- Blog Section -->
+  <section id="journal" class="journal-section">
+    <h2 class="journal-heading">Journal</h2>
+    <ul class="journal-list">
+      <li class="journal-entry">
+        <time class="entry-date" datetime="2024-01-01">2024.01.01</time>
+        <a href="/blog/example-post.html" class="entry-title">example post</a>
+      </li>
+    </ul>
+  </section>
+
+  <footer class="site-footer">
+    <p class="footer-text">&copy; Nick Ludwig</p>
+  </footer>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

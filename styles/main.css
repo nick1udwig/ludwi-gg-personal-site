@@ -1,0 +1,432 @@
+/* ============================================
+   SCIENTIFIC ROMANTICISM
+   Physics simulation personal site
+   ============================================ */
+
+/* --- CSS Variables --- */
+:root {
+  /* Light Mode - Parchment & Vermillion */
+  --bg-primary: #f5f0e6;
+  --bg-secondary: #ebe5d9;
+  --particle-color: #e63946;
+  --particle-glow: rgba(230, 57, 70, 0.3);
+  --text-primary: #2b2d42;
+  --text-secondary: #5c5f73;
+  --text-muted: #8d8fa3;
+  --accent: #d4a373;
+  --accent-hover: #c4956a;
+  --divider: #d4cfc3;
+
+  /* Dial/Slider */
+  --dial-bg: linear-gradient(145deg, #e8e3d7, #f7f2e8);
+  --dial-border: #c9c4b8;
+  --dial-shadow: 0 4px 12px rgba(43, 45, 66, 0.15);
+  --dial-track: #d4cfc3;
+  --dial-thumb: linear-gradient(145deg, #d4a373, #c08552);
+  --dial-thumb-border: #b07a4a;
+
+  /* Effects */
+  --noise-opacity: 0.03;
+  --scanline-opacity: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Dark Mode - Observatory Night */
+    --bg-primary: #1a1a2e;
+    --bg-secondary: #16162a;
+    --particle-color: #39ff14;
+    --particle-glow: rgba(57, 255, 20, 0.4);
+    --text-primary: #edf2f4;
+    --text-secondary: #a8b2c1;
+    --text-muted: #6b7280;
+    --accent: #4a4e69;
+    --accent-hover: #5c6180;
+    --divider: #2d2d4a;
+
+    /* Dial/Slider - Console aesthetic */
+    --dial-bg: linear-gradient(145deg, #1f1f38, #151528);
+    --dial-border: #2d2d4a;
+    --dial-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 30px rgba(57, 255, 20, 0.05);
+    --dial-track: #2d2d4a;
+    --dial-thumb: linear-gradient(145deg, #39ff14, #2ecc0f);
+    --dial-thumb-border: #27a80d;
+
+    /* Effects */
+    --noise-opacity: 0.02;
+    --scanline-opacity: 0.03;
+  }
+}
+
+/* --- Reset & Base --- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 1.125rem;
+  line-height: 1.7;
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Paper grain texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: var(--noise-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+/* CRT Scanlines (dark mode only) */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9998;
+  opacity: var(--scanline-opacity);
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.3) 2px,
+    rgba(0, 0, 0, 0.3) 4px
+  );
+}
+
+/* --- Typography --- */
+h1, h2, h3 {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.mono {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* --- Simulation Section --- */
+.simulation-section {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+#particle-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* --- Temperature Control --- */
+.temperature-control {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 1rem;
+  background: var(--dial-bg);
+  border: 1px solid var(--dial-border);
+  border-radius: 2rem;
+  box-shadow: var(--dial-shadow);
+  z-index: 100;
+}
+
+.temperature-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.temp-text {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.125rem;
+  font-style: italic;
+  color: var(--text-secondary);
+  user-select: none;
+}
+
+.temperature-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 80px;
+  height: 6px;
+  background: var(--dial-track);
+  border-radius: 3px;
+  cursor: pointer;
+  outline: none;
+}
+
+.temperature-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: var(--dial-thumb);
+  border: 2px solid var(--dial-thumb-border);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.temperature-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+}
+
+.temperature-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: var(--dial-thumb);
+  border: 2px solid var(--dial-thumb-border);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.temperature-slider::-moz-range-thumb:hover {
+  transform: scale(1.1);
+}
+
+.temp-indicator {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  min-width: 3rem;
+  text-align: right;
+  user-select: none;
+}
+
+.temp-value {
+  color: var(--text-secondary);
+}
+
+.temp-unit {
+  margin-left: 0.125rem;
+}
+
+/* Mobile adjustments */
+@media (max-width: 480px) {
+  .temperature-control {
+    top: 1rem;
+    right: 1rem;
+    padding: 0.5rem 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .temperature-slider {
+    width: 60px;
+  }
+}
+
+/* --- Scroll Indicator --- */
+.scroll-indicator {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  opacity: 0;
+  animation: fadeInScroll 0.6s ease-out 3s forwards;
+  z-index: 100;
+}
+
+.scroll-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.15em;
+  text-transform: lowercase;
+  color: var(--text-muted);
+}
+
+.scroll-chevron {
+  width: 20px;
+  height: 20px;
+  color: var(--text-muted);
+  animation: bounceChevron 2s ease-in-out infinite;
+}
+
+@keyframes fadeInScroll {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes bounceChevron {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(4px);
+  }
+}
+
+/* --- Wave Divider --- */
+.wave-divider {
+  width: 100%;
+  height: 60px;
+  overflow: hidden;
+  background: var(--bg-primary);
+}
+
+.wave-divider svg {
+  width: 100%;
+  height: 100%;
+}
+
+.wave-path {
+  fill: none;
+  stroke: var(--divider);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+/* --- Journal Section --- */
+.journal-section {
+  min-height: 100vh;
+  padding: 6rem 2rem;
+  max-width: 42rem;
+  margin: 0 auto;
+}
+
+.journal-heading {
+  font-size: 2.5rem;
+  font-weight: 400;
+  margin-bottom: 3rem;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.journal-list {
+  list-style: none;
+}
+
+.journal-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--divider);
+}
+
+.journal-entry:first-child {
+  border-top: 1px solid var(--divider);
+}
+
+.entry-date {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+}
+
+.entry-title {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 1.25rem;
+  color: var(--text-primary);
+  text-decoration: none;
+  position: relative;
+  display: inline-block;
+  transition: color 0.2s ease;
+}
+
+.entry-title::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--particle-color);
+  transition: width 0.3s ease;
+}
+
+.entry-title:hover {
+  color: var(--particle-color);
+}
+
+.entry-title:hover::after {
+  width: 100%;
+}
+
+/* Tablet and up: horizontal layout */
+@media (min-width: 640px) {
+  .journal-entry {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 2rem;
+  }
+
+  .entry-date {
+    flex-shrink: 0;
+    min-width: 7rem;
+  }
+}
+
+/* --- Footer --- */
+.site-footer {
+  padding: 3rem 2rem;
+  text-align: center;
+  background: var(--bg-secondary);
+}
+
+.footer-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* --- Reduced Motion --- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .scroll-indicator {
+    opacity: 1;
+    animation: none;
+  }
+
+  .scroll-chevron {
+    animation: none;
+  }
+}
