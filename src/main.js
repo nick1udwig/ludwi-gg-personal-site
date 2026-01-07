@@ -77,36 +77,92 @@ async function init() {
     }
   }
 
-  // Click/tap canvas to toggle between particle view and potential view
-  // On desktop, use click event
+  // --- Pointer interaction for particle repulsion ---
+  // Works with both mouse (desktop) and touch (mobile)
+
+  // Helper to get canvas-relative coordinates
+  function getCanvasCoords(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect()
+    // Account for CSS scaling (canvas internal size vs display size)
+    const scaleX = canvas.width / rect.width
+    const scaleY = canvas.height / rect.height
+    return {
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY
+    }
+  }
+
+  // Mouse events (desktop)
+  canvas.addEventListener('mousemove', (e) => {
+    const { x, y } = getCanvasCoords(e.clientX, e.clientY)
+    simulation.setPointer(x, y)
+  })
+
+  canvas.addEventListener('mouseleave', () => {
+    simulation.clearPointer()
+  })
+
+  // Click to toggle view (desktop)
   canvas.addEventListener('click', toggleView)
 
-  // On mobile, track touch to distinguish tap from drag
+  // Touch events (mobile) - distinguish tap from drag/hold
   let touchStartX = 0
   let touchStartY = 0
-  const TAP_THRESHOLD = 10 // pixels - if moved more than this, it's a drag
+  let touchStartTime = 0
+  let touchMoved = false
+  const TAP_THRESHOLD = 10       // pixels - if moved more than this, it's a drag
+  const TAP_TIME_THRESHOLD = 200 // ms - if held longer, it's a hold (not a tap)
 
   canvas.addEventListener('touchstart', (e) => {
     if (e.touches.length === 1) {
-      touchStartX = e.touches[0].clientX
-      touchStartY = e.touches[0].clientY
+      const touch = e.touches[0]
+      touchStartX = touch.clientX
+      touchStartY = touch.clientY
+      touchStartTime = Date.now()
+      touchMoved = false
+
+      // Start repulsion immediately on touch
+      const { x, y } = getCanvasCoords(touch.clientX, touch.clientY)
+      simulation.setPointer(x, y)
+    }
+  }, { passive: true })
+
+  canvas.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 1) {
+      const touch = e.touches[0]
+      const dx = Math.abs(touch.clientX - touchStartX)
+      const dy = Math.abs(touch.clientY - touchStartY)
+
+      if (dx > TAP_THRESHOLD || dy > TAP_THRESHOLD) {
+        touchMoved = true
+      }
+
+      // Update repulsion position
+      const { x, y } = getCanvasCoords(touch.clientX, touch.clientY)
+      simulation.setPointer(x, y)
     }
   }, { passive: true })
 
   canvas.addEventListener('touchend', (e) => {
+    // Clear repulsion
+    simulation.clearPointer()
+
     // Prevent double-firing on devices that fire both touch and click
     e.preventDefault()
 
-    // Only toggle if it was a tap (not a drag)
+    // Only toggle if it was a quick tap (not a drag or hold)
     if (e.changedTouches.length === 1) {
-      const touch = e.changedTouches[0]
-      const dx = Math.abs(touch.clientX - touchStartX)
-      const dy = Math.abs(touch.clientY - touchStartY)
+      const touchDuration = Date.now() - touchStartTime
+      const wasTap = !touchMoved && touchDuration < TAP_TIME_THRESHOLD
 
-      if (dx < TAP_THRESHOLD && dy < TAP_THRESHOLD) {
+      if (wasTap) {
         toggleView()
       }
     }
+  })
+
+  canvas.addEventListener('touchcancel', () => {
+    simulation.clearPointer()
   })
 
   // Toggle button click

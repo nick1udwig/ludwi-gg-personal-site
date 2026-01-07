@@ -55,6 +55,9 @@ export class ParticleSystem {
 
     // Track initialization state
     this.initialized = false
+
+    // Pointer position for repulsion effect (null = not active)
+    this.pointer = null
   }
 
   /**
@@ -113,7 +116,7 @@ export class ParticleSystem {
     // Run multiple physics steps per frame for faster convergence
     const steps = PHYSICS.STEPS_PER_FRAME || 1
     for (let i = 0; i < steps; i++) {
-      updatePhysics(this.particles, this.temperature)
+      updatePhysics(this.particles, this.temperature, this.pointer)
     }
 
     // Check if particles have settled
@@ -123,6 +126,26 @@ export class ParticleSystem {
         this.onSettled()
       }
     }
+  }
+
+  /**
+   * Set pointer position for repulsion effect
+   * @param {number|null} x - Canvas x coordinate, or null to disable
+   * @param {number|null} y - Canvas y coordinate, or null to disable
+   */
+  setPointer(x, y) {
+    if (x === null || y === null) {
+      this.pointer = null
+    } else {
+      this.pointer = { x, y }
+    }
+  }
+
+  /**
+   * Clear pointer (particles return to targets)
+   */
+  clearPointer() {
+    this.pointer = null
   }
 
   /**

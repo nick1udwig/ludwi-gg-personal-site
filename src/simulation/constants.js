@@ -8,6 +8,13 @@ export const PHYSICS = {
   STEPS_PER_FRAME: 1,       // Run multiple physics updates per render
 }
 
+// Pointer interaction constants
+export const POINTER = {
+  REPULSION_RADIUS: 80,     // Pixels - how far the repulsion reaches
+  REPULSION_STRENGTH: 15,   // How strongly particles are pushed away
+  FALLOFF: 2,               // Power for distance falloff (2 = inverse square)
+}
+
 export const RENDERING = {
   PARTICLE_RADIUS: 1.5,     // Pixel radius of particles
   TARGET_FPS: 60,

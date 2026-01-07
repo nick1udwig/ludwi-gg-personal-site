@@ -3,14 +3,17 @@
  * Uses direct interpolation toward targets with noise
  */
 
-import { PHYSICS } from './constants.js'
+import { PHYSICS, POINTER } from './constants.js'
 import { fastGaussian } from '../utils/random.js'
 
 /**
  * Update physics for all particles
  * Uses simple interpolation + momentum + noise (no dt² scaling)
+ * @param {ParticleData} particles
+ * @param {number} temperature - 0-100 slider value
+ * @param {object|null} pointer - {x, y} position or null if not active
  */
-export function updatePhysics(particles, temperature) {
+export function updatePhysics(particles, temperature, pointer = null) {
   const { count, posX, posY, prevX, prevY, targetX, targetY } = particles
 
   // Scale temperature from slider (0-100) to noise amplitude
@@ -18,6 +21,14 @@ export function updatePhysics(particles, temperature) {
 
   const pull = PHYSICS.SPRING_K      // How fast to move toward target (0-1)
   const momentum = PHYSICS.DAMPING   // How much velocity to retain (0-1)
+
+  // Pointer repulsion parameters
+  const hasPointer = pointer !== null
+  const pointerX = hasPointer ? pointer.x : 0
+  const pointerY = hasPointer ? pointer.y : 0
+  const repelRadius = POINTER.REPULSION_RADIUS
+  const repelRadiusSq = repelRadius * repelRadius
+  const repelStrength = POINTER.REPULSION_STRENGTH
 
   for (let i = 0; i < count; i++) {
     // Current velocity (from previous frame)
@@ -28,9 +39,28 @@ export function updatePhysics(particles, temperature) {
     const dx = targetX[i] - posX[i]
     const dy = targetY[i] - posY[i]
 
-    // New position = current + momentum*velocity + pull*towardTarget + noise
-    const newX = posX[i] + momentum * velX + pull * dx + noiseAmp * fastGaussian()
-    const newY = posY[i] + momentum * velY + pull * dy + noiseAmp * fastGaussian()
+    // Calculate repulsion from pointer
+    let repelX = 0
+    let repelY = 0
+
+    if (hasPointer) {
+      const toPtrX = posX[i] - pointerX
+      const toPtrY = posY[i] - pointerY
+      const distSq = toPtrX * toPtrX + toPtrY * toPtrY
+
+      if (distSq < repelRadiusSq && distSq > 0.01) {
+        const dist = Math.sqrt(distSq)
+        // Normalize and scale by inverse distance (stronger when closer)
+        const falloff = 1 - dist / repelRadius  // Linear falloff, 1 at center, 0 at edge
+        const strength = repelStrength * falloff * falloff  // Quadratic for smoother feel
+        repelX = (toPtrX / dist) * strength
+        repelY = (toPtrY / dist) * strength
+      }
+    }
+
+    // New position = current + momentum*velocity + pull*towardTarget + repulsion + noise
+    const newX = posX[i] + momentum * velX + pull * dx + repelX + noiseAmp * fastGaussian()
+    const newY = posY[i] + momentum * velY + pull * dy + repelY + noiseAmp * fastGaussian()
 
     // Update positions
     prevX[i] = posX[i]
