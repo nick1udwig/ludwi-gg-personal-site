@@ -8,7 +8,7 @@ import { ParticleSystem } from './simulation/ParticleSystem.js'
 // Wait for DOM to be ready
 document.addEventListener('DOMContentLoaded', init)
 
-function init() {
+async function init() {
   // Get elements
   const canvas = document.getElementById('particle-canvas')
   const temperatureSlider = document.getElementById('temperature')
@@ -23,6 +23,7 @@ function init() {
   // Create particle system
   const simulation = new ParticleSystem(canvas, {
     text: 'NICK LUDWIG',
+    imagePath: '/headshot.png',
     initialTemperature: parseInt(temperatureSlider?.value || '15', 10),
     onSettled: () => {
       // Show scroll indicator when particles settle
@@ -31,6 +32,9 @@ function init() {
       }
     }
   })
+
+  // Initialize asynchronously (loads image)
+  await simulation.init()
 
   // Connect temperature slider
   if (temperatureSlider) {

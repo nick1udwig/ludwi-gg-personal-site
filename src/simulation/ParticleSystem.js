@@ -5,7 +5,7 @@
 
 import { ParticleData } from './particles.js'
 import { updatePhysics, areParticlesSettled } from './physics.js'
-import { generateTargets } from './potentialField.js'
+import { generateTargets, generateTargetsSimple } from './potentialField.js'
 import { getParticleCount, RESPONSIVE } from './constants.js'
 import { Renderer } from '../rendering/Renderer.js'
 import { setupCanvas, setupResizeHandler } from '../rendering/canvasSetup.js'
@@ -16,6 +16,7 @@ export class ParticleSystem {
   constructor(canvas, options = {}) {
     this.canvas = canvas
     this.text = options.text || 'NICK LUDWIG'
+    this.imagePath = options.imagePath || null
     this.temperature = options.initialTemperature || 15
 
     // Initialize canvas
@@ -27,15 +28,9 @@ export class ParticleSystem {
     this.renderer = new Renderer(canvas)
     this.renderer.setDimensions(width, height)
 
-    // Create particles
-    const particleCount = getParticleCount(width)
+    // Create particles (will be populated after async init)
     this.particles = new ParticleData(Math.max(...Object.values(RESPONSIVE)))
-    this.particles.initializeGrid(width, height, particleCount)
-
-    // Generate targets (text + square shape)
-    const targets = generateTargets(this.text, width, height, particleCount)
-    this.particles.setTargets(targets)
-    this.currentTargets = targets
+    this.particles.initializeGrid(width, height, getParticleCount(width))
 
     // Create game loop
     this.gameLoop = new GameLoop(
@@ -57,12 +52,46 @@ export class ParticleSystem {
     // Track if particles have settled (for scroll indicator)
     this.hasSettled = false
     this.onSettled = options.onSettled || null
+
+    // Track initialization state
+    this.initialized = false
+  }
+
+  /**
+   * Async initialization - load image and generate targets
+   */
+  async init() {
+    const particleCount = getParticleCount(this.width)
+
+    try {
+      // Generate targets with image (async)
+      const targets = await generateTargets(
+        this.text,
+        this.imagePath,
+        this.width,
+        this.height,
+        particleCount
+      )
+      this.particles.setTargets(targets)
+      this.currentTargets = targets
+    } catch (e) {
+      console.warn('Failed to generate targets with image, using simple fallback:', e)
+      // Fallback to simple text-only targets
+      const targets = generateTargetsSimple(this.text, this.width, this.height, particleCount)
+      this.particles.setTargets(targets)
+      this.currentTargets = targets
+    }
+
+    this.initialized = true
+    return this
   }
 
   /**
    * Physics update (called at fixed timestep)
    */
   update(dt) {
+    if (!this.initialized) return
+
     updatePhysics(this.particles, this.temperature, dt)
 
     // Check if particles have settled
@@ -78,13 +107,14 @@ export class ParticleSystem {
    * Render (called every frame with interpolation)
    */
   render(alpha) {
+    if (!this.initialized) return
     this.renderer.render(this.particles, alpha)
   }
 
   /**
    * Handle window resize
    */
-  handleResize(oldWidth, oldHeight, newWidth, newHeight) {
+  async handleResize(oldWidth, oldHeight, newWidth, newHeight) {
     this.width = newWidth
     this.height = newHeight
     this.renderer.setDimensions(newWidth, newHeight)
@@ -96,9 +126,23 @@ export class ParticleSystem {
     if (newCount !== oldCount) {
       // Regenerate everything for new particle count
       this.particles.initializeGrid(newWidth, newHeight, newCount)
-      const targets = generateTargets(this.text, newWidth, newHeight, newCount)
-      this.particles.setTargets(targets)
-      this.currentTargets = targets
+
+      try {
+        const targets = await generateTargets(
+          this.text,
+          this.imagePath,
+          newWidth,
+          newHeight,
+          newCount
+        )
+        this.particles.setTargets(targets)
+        this.currentTargets = targets
+      } catch (e) {
+        const targets = generateTargetsSimple(this.text, newWidth, newHeight, newCount)
+        this.particles.setTargets(targets)
+        this.currentTargets = targets
+      }
+
       this.hasSettled = false
     } else {
       // Just scale existing positions
@@ -150,6 +194,11 @@ export class ParticleSystem {
    * Start the simulation
    */
   start() {
+    if (!this.initialized) {
+      console.warn('ParticleSystem not initialized. Call init() first.')
+      return
+    }
+
     if (this.prefersReducedMotion) {
       // Skip animation, show final state immediately
       this.particles.snapToTargets()
@@ -175,9 +224,16 @@ export class ParticleSystem {
    * Resume simulation
    */
   resume() {
-    if (!this.prefersReducedMotion && !document.hidden) {
+    if (!this.prefersReducedMotion && !document.hidden && this.initialized) {
       this.gameLoop.start()
     }
+  }
+
+  /**
+   * Check if simulation is running
+   */
+  isRunning() {
+    return this.gameLoop.isRunning()
   }
 
   /**

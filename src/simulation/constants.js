@@ -1,8 +1,8 @@
 // Physics constants - tunable parameters
 export const PHYSICS = {
-  SPRING_K: 0.08,           // Attraction strength to target (lower = slower settling)
-  DAMPING: 0.94,            // Velocity retention per frame (0.9-0.98)
-  BASE_TEMPERATURE: 0.3,    // Minimum thermal noise
+  SPRING_K: 0.5,            // Attraction strength to target (higher = faster settling)
+  DAMPING: 0.85,            // Velocity retention per frame (lower = more friction, faster settling)
+  BASE_TEMPERATURE: 0.2,    // Minimum thermal noise
   MAX_TEMPERATURE: 8,       // Maximum slider value effect
   DT: 1 / 60,               // Physics timestep (60 Hz)
   MASS: 1,                  // Uniform particle mass
