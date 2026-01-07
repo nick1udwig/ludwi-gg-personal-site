@@ -135,41 +135,46 @@ export class ParticleSystem {
 
   /**
    * Handle window resize
+   * Always regenerate targets to avoid distortion when aspect ratio changes
    */
   async handleResize(oldWidth, oldHeight, newWidth, newHeight) {
     this.width = newWidth
     this.height = newHeight
     this.renderer.setDimensions(newWidth, newHeight)
 
-    // Check if particle count should change
-    const oldCount = this.particles.count
     const newCount = getParticleCount(newWidth)
 
-    if (newCount !== oldCount) {
-      // Regenerate everything for new particle count
-      this.particles.initializeGrid(newWidth, newHeight, newCount)
+    // Always regenerate targets on resize to avoid aspect ratio distortion
+    // Re-initialize particle grid at new size
+    this.particles.initializeGrid(newWidth, newHeight, newCount)
 
-      try {
-        const targets = await generateTargets(
-          this.text,
-          this.imagePath,
-          newWidth,
-          newHeight,
-          newCount
-        )
-        this.particles.setTargets(targets)
-        this.currentTargets = targets
-      } catch (e) {
-        const targets = generateTargetsSimple(this.text, newWidth, newHeight, newCount)
-        this.particles.setTargets(targets)
-        this.currentTargets = targets
-      }
+    try {
+      const targets = await generateTargets(
+        this.text,
+        this.imagePath,
+        newWidth,
+        newHeight,
+        newCount
+      )
+      this.particles.setTargets(targets)
+      this.currentTargets = targets
 
-      this.hasSettled = false
-    } else {
-      // Just scale existing positions
-      this.particles.resize(oldWidth, oldHeight, newWidth, newHeight)
+      // Also regenerate potential view
+      const potentialCanvas = await generatePotentialView(
+        this.text,
+        this.imagePath,
+        newWidth,
+        newHeight,
+        this.renderer.particleColor
+      )
+      this.renderer.setPotentialImage(potentialCanvas)
+    } catch (e) {
+      const targets = generateTargetsSimple(this.text, newWidth, newHeight, newCount)
+      this.particles.setTargets(targets)
+      this.currentTargets = targets
     }
+
+    this.hasSettled = false
 
     // Refresh random table occasionally
     refreshRandomTable()

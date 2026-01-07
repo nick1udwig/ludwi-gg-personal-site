@@ -22,7 +22,7 @@ async function init() {
 
   // Detect mobile for lower default temperature
   const isMobile = window.innerWidth < 768
-  const defaultTemp = isMobile ? 10 : 15
+  const defaultTemp = isMobile ? 5 : 15
 
   // Update slider to match
   if (temperatureSlider) {

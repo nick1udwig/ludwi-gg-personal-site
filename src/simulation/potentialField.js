@@ -26,10 +26,10 @@ export async function generatePotentialView(text, imagePath, canvasWidth, canvas
   canvas.width = canvasWidth
   canvas.height = canvasHeight
 
-  // Calculate font size - allow larger on desktop
-  // On desktop (wider screens), we can use more height for text
-  const isDesktop = canvasWidth >= 768
-  const maxTextHeight = isDesktop ? canvasHeight * 0.18 : canvasHeight * 0.15
+  // Calculate font size based on canvas dimensions
+  // Width is the primary constraint, height is secondary
+  // On larger screens, allow taller text proportionally
+  const maxTextHeight = Math.min(canvasHeight * 0.2, canvasWidth * 0.12)
   const fontSize = calculateFontSize(ctx, text, canvasWidth * 0.9, maxTextHeight)
 
   // Draw text
@@ -98,8 +98,8 @@ export async function generateTargets(text, imagePath, canvasWidth, canvasHeight
   ctx.fillRect(0, 0, width, height)
 
   // Calculate font size - match potential view sizing
-  const isDesktop = width >= 768 * scale
-  const maxTextHeight = isDesktop ? height * 0.18 : height * 0.15
+  // Width is the primary constraint, height is secondary
+  const maxTextHeight = Math.min(height * 0.2, width * 0.12)
   const fontSize = calculateFontSize(ctx, text, width * 0.9, maxTextHeight)
 
   // Draw text centered in upper portion
@@ -232,21 +232,20 @@ export function generateTargetsSimple(text, canvasWidth, canvasHeight, particleC
 
 /**
  * Calculate optimal font size to fit text within width
- * Uses binary search for accuracy
  */
 function calculateFontSize(ctx, text, maxWidth, maxHeight) {
-  // Start with a large font and scale to fit
-  let fontSize = 200
+  // Start with a large font and scale to fit width
+  let fontSize = 400
 
   ctx.font = `bold ${fontSize}px Impact, Arial Black, sans-serif`
   let metrics = ctx.measureText(text)
 
-  // Scale to fit width
+  // Scale to fit width (primary constraint)
   if (metrics.width > maxWidth) {
     fontSize = Math.floor(fontSize * (maxWidth / metrics.width))
   }
 
-  // Cap at maxHeight
+  // Cap at maxHeight (secondary constraint)
   if (fontSize > maxHeight) {
     fontSize = Math.floor(maxHeight)
   }
