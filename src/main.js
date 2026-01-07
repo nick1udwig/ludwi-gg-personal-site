@@ -64,13 +64,35 @@ async function init() {
   }
 
   // Click/tap canvas to toggle between particle view and potential view
+  // On desktop, use click event
   canvas.addEventListener('click', toggleView)
 
-  // Also support touch on canvas
+  // On mobile, track touch to distinguish tap from drag
+  let touchStartX = 0
+  let touchStartY = 0
+  const TAP_THRESHOLD = 10 // pixels - if moved more than this, it's a drag
+
+  canvas.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+      touchStartX = e.touches[0].clientX
+      touchStartY = e.touches[0].clientY
+    }
+  }, { passive: true })
+
   canvas.addEventListener('touchend', (e) => {
     // Prevent double-firing on devices that fire both touch and click
     e.preventDefault()
-    toggleView()
+
+    // Only toggle if it was a tap (not a drag)
+    if (e.changedTouches.length === 1) {
+      const touch = e.changedTouches[0]
+      const dx = Math.abs(touch.clientX - touchStartX)
+      const dy = Math.abs(touch.clientY - touchStartY)
+
+      if (dx < TAP_THRESHOLD && dy < TAP_THRESHOLD) {
+        toggleView()
+      }
+    }
   })
 
   // Toggle button click
