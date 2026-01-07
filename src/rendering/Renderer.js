@@ -13,8 +13,8 @@ export class Renderer {
     this.height = 0
 
     // Theme colors
-    this.particleColor = '#e63946' // Light mode default
-    this.glowColor = 'rgba(230, 57, 70, 0.3)'
+    this.particleColor = '#2563eb' // Light mode default (blue)
+    this.glowColor = 'rgba(37, 99, 235, 0.3)'
     this.isDarkMode = false
 
     // Potential view (shows text + image instead of particles)
@@ -40,9 +40,9 @@ export class Renderer {
       this.particleColor = '#39ff14'
       this.glowColor = 'rgba(57, 255, 20, 0.4)'
     } else {
-      // Light mode: vermillion red
-      this.particleColor = '#e63946'
-      this.glowColor = 'rgba(230, 57, 70, 0.3)'
+      // Light mode: blue
+      this.particleColor = '#2563eb'
+      this.glowColor = 'rgba(37, 99, 235, 0.3)'
     }
   }
 

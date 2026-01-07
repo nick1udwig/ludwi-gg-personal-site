@@ -5,11 +5,11 @@
 
 /* --- CSS Variables --- */
 :root {
-  /* Light Mode - Parchment & Vermillion */
-  --bg-primary: #f5f0e6;
-  --bg-secondary: #ebe5d9;
-  --particle-color: #e63946;
-  --particle-glow: rgba(230, 57, 70, 0.3);
+  /* Light Mode - Warm Parchment & Blue */
+  --bg-primary: #f7f0e0;
+  --bg-secondary: #efe8d8;
+  --particle-color: #2563eb;
+  --particle-glow: rgba(37, 99, 235, 0.3);
   --text-primary: #2b2d42;
   --text-secondary: #5c5f73;
   --text-muted: #8d8fa3;
@@ -30,8 +30,8 @@
   --scanline-opacity: 0;
 
   /* Scroll Indicator */
-  --scroll-indicator-bg: rgba(245, 240, 230, 0.75);
-  --scroll-indicator-border: rgba(212, 207, 195, 0.6);
+  --scroll-indicator-bg: rgba(247, 240, 224, 0.75);
+  --scroll-indicator-border: rgba(212, 200, 180, 0.6);
 }
 
 @media (prefers-color-scheme: dark) {
