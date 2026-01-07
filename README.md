@@ -1,4 +1,4 @@
-# Nick Ludwig Personal Site
+# Nick Ludwig's Personal Site
 
 Physics particle simulation personal site. Particles start on a grid and converge to form "NICK LUDWIG" text and a headshot silhouette. Temperature slider controls Brownian motion intensity.
 
