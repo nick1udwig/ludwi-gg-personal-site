@@ -15,6 +15,37 @@ function loadImage(src) {
   })
 }
 
+// Image cache to avoid loading the same image twice
+let imageCache = null
+let imageCachePath = null
+
+/**
+ * Get cached image or load if not cached
+ */
+async function getCachedImage(path) {
+  if (imageCachePath === path && imageCache) {
+    return imageCache
+  }
+  imageCache = await loadImage(path)
+  imageCachePath = path
+  return imageCache
+}
+
+/**
+ * Get text layout configuration based on canvas size
+ * Centralizes breakpoint and ratio logic
+ */
+function getTextLayoutConfig(canvasWidth, canvasHeight) {
+  const isSmallScreen = canvasWidth < 600
+  const widthRatio = isSmallScreen ? 0.95 : 0.9
+  const heightRatio = isSmallScreen ? 0.16 : 0.12
+  return {
+    widthRatio,
+    heightRatio,
+    maxTextHeight: Math.min(canvasHeight * 0.2, canvasWidth * heightRatio)
+  }
+}
+
 /**
  * Generate the "potential view" - a canvas showing text + headshot
  * This is displayed when user clicks to toggle view
@@ -27,13 +58,8 @@ export async function generatePotentialView(text, imagePath, canvasWidth, canvas
   canvas.height = canvasHeight
 
   // Calculate font size based on canvas dimensions
-  // On small screens, use more horizontal space for better readability
-  // On larger screens, cap the height proportionally
-  const isSmallScreen = canvasWidth < 600
-  const widthRatio = isSmallScreen ? 0.95 : 0.9
-  const heightRatio = isSmallScreen ? 0.16 : 0.12
-  const maxTextHeight = Math.min(canvasHeight * 0.2, canvasWidth * heightRatio)
-  const fontSize = calculateFontSize(ctx, text, canvasWidth * widthRatio, maxTextHeight)
+  const layout = getTextLayoutConfig(canvasWidth, canvasHeight)
+  const fontSize = calculateFontSize(ctx, text, canvasWidth * layout.widthRatio, layout.maxTextHeight)
 
   // Draw text
   ctx.fillStyle = particleColor
@@ -47,7 +73,7 @@ export async function generatePotentialView(text, imagePath, canvasWidth, canvas
   // Load and draw headshot
   if (imagePath) {
     try {
-      const img = await loadImage(imagePath)
+      const img = await getCachedImage(imagePath)
 
       const imgMaxHeight = canvasHeight * 0.65
       const imgMaxWidth = canvasWidth * 0.55
@@ -101,12 +127,8 @@ export async function generateTargets(text, imagePath, canvasWidth, canvasHeight
   ctx.fillRect(0, 0, width, height)
 
   // Calculate font size - match potential view sizing
-  // On small screens, use more horizontal space for better readability
-  const isSmallScreen = width < 600
-  const widthRatio = isSmallScreen ? 0.95 : 0.9
-  const heightRatio = isSmallScreen ? 0.16 : 0.12
-  const maxTextHeight = Math.min(height * 0.2, width * heightRatio)
-  const fontSize = calculateFontSize(ctx, text, width * widthRatio, maxTextHeight)
+  const layout = getTextLayoutConfig(width, height)
+  const fontSize = calculateFontSize(ctx, text, width * layout.widthRatio, layout.maxTextHeight)
 
   // Draw text centered in upper portion
   ctx.fillStyle = '#fff'
@@ -120,7 +142,7 @@ export async function generateTargets(text, imagePath, canvasWidth, canvasHeight
   // Load and draw headshot below text
   if (imagePath) {
     try {
-      const img = await loadImage(imagePath)
+      const img = await getCachedImage(imagePath)
 
       // Calculate image size and position - match potential view
       const imgMaxHeight = height * 0.65

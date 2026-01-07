@@ -32,7 +32,8 @@ export class Renderer {
 
     // Listen for theme changes
     this.mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    this.mediaQuery.addEventListener('change', () => this.updateTheme())
+    this.themeChangeHandler = () => this.updateTheme()
+    this.mediaQuery.addEventListener('change', this.themeChangeHandler)
   }
 
   /**
@@ -149,44 +150,9 @@ export class Renderer {
   }
 
   /**
-   * Render with circles instead of rectangles (slightly slower but rounder)
-   * Use this if you prefer circular particles
-   */
-  renderCircles(particles, alpha = 1) {
-    const { ctx, width, height, particleColor, isDarkMode, glowColor } = this
-    const { count, posX, posY, prevX, prevY } = particles
-    const radius = RENDERING.PARTICLE_RADIUS
-
-    ctx.clearRect(0, 0, width, height)
-
-    if (isDarkMode) {
-      ctx.shadowColor = glowColor
-      ctx.shadowBlur = 6
-    }
-
-    ctx.fillStyle = particleColor
-    ctx.beginPath()
-
-    for (let i = 0; i < count; i++) {
-      const x = prevX[i] + (posX[i] - prevX[i]) * alpha
-      const y = prevY[i] + (posY[i] - prevY[i]) * alpha
-
-      ctx.moveTo(x + radius, y)
-      ctx.arc(x, y, radius, 0, Math.PI * 2)
-    }
-
-    ctx.fill()
-
-    if (isDarkMode) {
-      ctx.shadowColor = 'transparent'
-      ctx.shadowBlur = 0
-    }
-  }
-
-  /**
    * Cleanup
    */
   destroy() {
-    this.mediaQuery.removeEventListener('change', () => this.updateTheme())
+    this.mediaQuery.removeEventListener('change', this.themeChangeHandler)
   }
 }

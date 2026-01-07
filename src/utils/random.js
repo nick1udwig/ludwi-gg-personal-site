@@ -37,17 +37,20 @@ const RANDOM_TABLE_SIZE = 4096
 const RANDOM_TABLE_MASK = RANDOM_TABLE_SIZE - 1
 const randomTable = new Float32Array(RANDOM_TABLE_SIZE)
 let randomIndex = 0
-
-// Pre-fill table with Gaussian values
-for (let i = 0; i < RANDOM_TABLE_SIZE; i++) {
-  randomTable[i] = gaussianRandom()
-}
+let tableInitialized = false
 
 /**
  * Fast Gaussian random from pre-computed table
  * Not cryptographically secure, but fast and good enough for visuals
+ * Lazily initializes table on first use to avoid blocking page load
  */
 export function fastGaussian() {
+  if (!tableInitialized) {
+    for (let i = 0; i < RANDOM_TABLE_SIZE; i++) {
+      randomTable[i] = gaussianRandom()
+    }
+    tableInitialized = true
+  }
   randomIndex = (randomIndex + 1) & RANDOM_TABLE_MASK
   return randomTable[randomIndex]
 }
@@ -60,4 +63,5 @@ export function refreshRandomTable() {
     randomTable[i] = gaussianRandom()
   }
   randomIndex = 0
+  tableInitialized = true
 }
