@@ -16,6 +16,59 @@ function loadImage(src) {
 }
 
 /**
+ * Generate the "potential view" - a canvas showing text + headshot
+ * This is displayed when user clicks to toggle view
+ */
+export async function generatePotentialView(text, imagePath, canvasWidth, canvasHeight, particleColor) {
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+
+  canvas.width = canvasWidth
+  canvas.height = canvasHeight
+
+  // Calculate font size
+  const fontSize = calculateFontSize(ctx, text, canvasWidth * 0.85, canvasHeight * 0.25)
+
+  // Draw text
+  ctx.fillStyle = particleColor
+  ctx.font = `bold ${fontSize}px Impact, Arial Black, sans-serif`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+
+  const textY = canvasHeight * 0.22
+  ctx.fillText(text, canvasWidth / 2, textY)
+
+  // Load and draw headshot
+  if (imagePath) {
+    try {
+      const img = await loadImage(imagePath)
+
+      const imgMaxHeight = canvasHeight * 0.55
+      const imgMaxWidth = canvasWidth * 0.5
+      const imgAspect = img.width / img.height
+
+      let imgWidth, imgHeight
+      if (imgAspect > imgMaxWidth / imgMaxHeight) {
+        imgWidth = imgMaxWidth
+        imgHeight = imgMaxWidth / imgAspect
+      } else {
+        imgHeight = imgMaxHeight
+        imgWidth = imgMaxHeight * imgAspect
+      }
+
+      const imgX = (canvasWidth - imgWidth) / 2
+      const imgY = canvasHeight * 0.38
+
+      ctx.drawImage(img, imgX, imgY, imgWidth, imgHeight)
+    } catch (e) {
+      console.warn('Failed to load headshot for potential view:', e)
+    }
+  }
+
+  return canvas
+}
+
+/**
  * Generate target positions for particles to form text and headshot silhouette
  * @param {string} text - Text to render (e.g., "NICK LUDWIG")
  * @param {string} imagePath - Path to headshot image
@@ -87,11 +140,15 @@ export async function generateTargets(text, imagePath, canvasWidth, canvasHeight
     }
   }
 
-  // Extract edge pixels using threshold detection
-  // Since headshot has white background, we detect non-white pixels
+  // Extract pixels, separating text (top) from image (bottom)
+  // We'll weight more particles toward the text for clarity
   const imageData = ctx.getImageData(0, 0, width, height)
   const data = imageData.data
-  const filledPixels = []
+  const textPixels = []
+  const imagePixels = []
+
+  // Dividing line between text and image region (text is in top ~35%)
+  const textBottomY = height * 0.35
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
@@ -100,23 +157,28 @@ export async function generateTargets(text, imagePath, canvasWidth, canvasHeight
       const g = data[idx + 1]
       const b = data[idx + 2]
 
-      // Calculate luminance
       const luminance = 0.299 * r + 0.587 * g + 0.114 * b
 
-      // For text (white on black): detect white pixels
-      // For headshot (on white bg drawn on black): detect non-black pixels
-      // Since we draw on black canvas, any non-black pixel is part of our content
       if (luminance > 30) {
-        filledPixels.push({
-          x: x / scale,
-          y: y / scale
-        })
+        const pixel = { x: x / scale, y: y / scale }
+        if (y < textBottomY) {
+          textPixels.push(pixel)
+        } else {
+          imagePixels.push(pixel)
+        }
       }
     }
   }
 
-  // Subsample to match particle count
-  return subsamplePixels(filledPixels, particleCount)
+  // Allocate 60% of particles to text, 40% to image for better text clarity
+  const textParticleCount = Math.floor(particleCount * 0.6)
+  const imageParticleCount = particleCount - textParticleCount
+
+  const textTargets = subsamplePixels(textPixels, textParticleCount)
+  const imageTargets = subsamplePixels(imagePixels, imageParticleCount)
+
+  // Combine and shuffle
+  return shuffleArray([...textTargets, ...imageTargets])
 }
 
 /**

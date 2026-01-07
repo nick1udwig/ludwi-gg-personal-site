@@ -49,6 +49,21 @@ async function init() {
     })
   }
 
+  // Click/tap to toggle between particle view and potential view
+  canvas.addEventListener('click', () => {
+    simulation.toggleView()
+  })
+
+  // Also support touch
+  canvas.addEventListener('touchend', (e) => {
+    // Prevent double-firing on devices that fire both touch and click
+    e.preventDefault()
+    simulation.toggleView()
+  })
+
+  // Add cursor style to indicate clickability
+  canvas.style.cursor = 'pointer'
+
   // Start simulation
   simulation.start()
 

@@ -17,6 +17,10 @@ export class Renderer {
     this.glowColor = 'rgba(230, 57, 70, 0.3)'
     this.isDarkMode = false
 
+    // Potential view (shows text + image instead of particles)
+    this.showPotentialView = false
+    this.potentialImage = null
+
     // Detect initial theme
     this.updateTheme()
 
@@ -51,6 +55,21 @@ export class Renderer {
   }
 
   /**
+   * Toggle between particle view and potential view
+   */
+  togglePotentialView() {
+    this.showPotentialView = !this.showPotentialView
+    return this.showPotentialView
+  }
+
+  /**
+   * Set the potential image (pre-rendered text + headshot)
+   */
+  setPotentialImage(imageData) {
+    this.potentialImage = imageData
+  }
+
+  /**
    * Clear the canvas
    */
   clear() {
@@ -63,15 +82,19 @@ export class Renderer {
    * @param {number} alpha - Interpolation factor (0-1) between physics states
    */
   render(particles, alpha = 1) {
-    const { ctx, width, height, particleColor, isDarkMode, glowColor } = this
-    const { count, posX, posY, prevX, prevY } = particles
-    const radius = RENDERING.PARTICLE_RADIUS
+    const { ctx, width, height, particleColor } = this
 
     // Clear canvas
     ctx.clearRect(0, 0, width, height)
 
-    // NOTE: shadowBlur removed for performance - it's extremely expensive
-    // The glow effect looked nice but cost ~10x performance
+    // If showing potential view, draw the pre-rendered image instead
+    if (this.showPotentialView && this.potentialImage) {
+      ctx.drawImage(this.potentialImage, 0, 0, width, height)
+      return
+    }
+
+    const { count, posX, posY, prevX, prevY } = particles
+    const radius = RENDERING.PARTICLE_RADIUS
 
     // Set fill style once for all particles
     ctx.fillStyle = particleColor

@@ -5,7 +5,7 @@
 
 import { ParticleData } from './particles.js'
 import { updatePhysics, areParticlesSettled } from './physics.js'
-import { generateTargets, generateTargetsSimple } from './potentialField.js'
+import { generateTargets, generateTargetsSimple, generatePotentialView } from './potentialField.js'
 import { getParticleCount, RESPONSIVE, PHYSICS } from './constants.js'
 import { Renderer } from '../rendering/Renderer.js'
 import { setupCanvas, setupResizeHandler } from '../rendering/canvasSetup.js'
@@ -82,8 +82,25 @@ export class ParticleSystem {
       this.currentTargets = targets
     }
 
+    // Generate the potential view image
+    const potentialCanvas = await generatePotentialView(
+      this.text,
+      this.imagePath,
+      this.width,
+      this.height,
+      this.renderer.particleColor
+    )
+    this.renderer.setPotentialImage(potentialCanvas)
+
     this.initialized = true
     return this
+  }
+
+  /**
+   * Toggle between particle view and potential view
+   */
+  toggleView() {
+    return this.renderer.togglePotentialView()
   }
 
   /**
