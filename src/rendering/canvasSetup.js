@@ -35,25 +35,44 @@ export function setupResizeHandler(canvas, onResize) {
   let currentWidth = canvas.parentElement.getBoundingClientRect().width
   let currentHeight = canvas.parentElement.getBoundingClientRect().height
   let resizeTimeout = null
+  let isTouching = false
+
+  // Track touch state to avoid resize during scroll on iOS
+  const onTouchStart = () => { isTouching = true }
+  const onTouchEnd = () => {
+    // Delay clearing touch state to allow scroll momentum to settle
+    setTimeout(() => { isTouching = false }, 500)
+  }
+  window.addEventListener('touchstart', onTouchStart, { passive: true })
+  window.addEventListener('touchend', onTouchEnd, { passive: true })
+  window.addEventListener('touchcancel', onTouchEnd, { passive: true })
 
   const handleResize = () => {
+    // Skip resize handling while user is touching (scrolling on iOS)
+    // This prevents particle reset when iOS address bar shows/hides
+    if (isTouching) {
+      return
+    }
+
     if (resizeTimeout) {
       clearTimeout(resizeTimeout)
     }
 
     resizeTimeout = setTimeout(() => {
+      // Double-check touch state after debounce
+      if (isTouching) {
+        return
+      }
+
       const rect = canvas.parentElement.getBoundingClientRect()
       const newWidth = rect.width
       const newHeight = rect.height
 
-      // Only trigger resize if dimensions actually changed significantly
-      // On iOS, the address bar showing/hiding causes small height changes
-      // which we want to ignore to prevent particle resets during scroll
+      // Only trigger resize if width changed
+      // Ignore height-only changes entirely (iOS address bar)
       const widthChanged = newWidth !== currentWidth
-      const heightDiff = Math.abs(newHeight - currentHeight)
-      const significantHeightChange = heightDiff > 100 // Ignore small changes from iOS address bar
 
-      if (widthChanged || significantHeightChange) {
+      if (widthChanged) {
         const oldWidth = currentWidth
         const oldHeight = currentHeight
 
@@ -88,6 +107,9 @@ export function setupResizeHandler(canvas, onResize) {
   // Return cleanup function
   return () => {
     window.removeEventListener('resize', handleResize)
+    window.removeEventListener('touchstart', onTouchStart)
+    window.removeEventListener('touchend', onTouchEnd)
+    window.removeEventListener('touchcancel', onTouchEnd)
     if (resizeObserver) {
       resizeObserver.disconnect()
     }
