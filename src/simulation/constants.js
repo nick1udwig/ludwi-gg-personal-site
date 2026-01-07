@@ -5,7 +5,7 @@ export const PHYSICS = {
   BASE_TEMPERATURE: 0.1,    // Minimum jitter amplitude
   MAX_TEMPERATURE: 3,       // Maximum jitter at full temperature
   DT: 1 / 60,               // Physics timestep (for game loop timing)
-  STEPS_PER_FRAME: 2,       // Run multiple physics updates per render
+  STEPS_PER_FRAME: 1,       // Run multiple physics updates per render
 }
 
 export const RENDERING = {
@@ -16,7 +16,7 @@ export const RENDERING = {
 
 // Responsive particle counts
 export const RESPONSIVE = {
-  MOBILE: 500,              // < 480px
+  MOBILE: 700,              // < 480px
   TABLET: 1000,             // < 768px
   DESKTOP: 1500,            // < 1200px
   LARGE: 2000,              // >= 1200px

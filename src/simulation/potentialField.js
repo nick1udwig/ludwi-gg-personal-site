@@ -27,10 +27,13 @@ export async function generatePotentialView(text, imagePath, canvasWidth, canvas
   canvas.height = canvasHeight
 
   // Calculate font size based on canvas dimensions
-  // Width is the primary constraint, height is secondary
-  // On larger screens, allow taller text proportionally
-  const maxTextHeight = Math.min(canvasHeight * 0.2, canvasWidth * 0.12)
-  const fontSize = calculateFontSize(ctx, text, canvasWidth * 0.9, maxTextHeight)
+  // On small screens, use more horizontal space for better readability
+  // On larger screens, cap the height proportionally
+  const isSmallScreen = canvasWidth < 600
+  const widthRatio = isSmallScreen ? 0.95 : 0.9
+  const heightRatio = isSmallScreen ? 0.16 : 0.12
+  const maxTextHeight = Math.min(canvasHeight * 0.2, canvasWidth * heightRatio)
+  const fontSize = calculateFontSize(ctx, text, canvasWidth * widthRatio, maxTextHeight)
 
   // Draw text
   ctx.fillStyle = particleColor
@@ -98,9 +101,12 @@ export async function generateTargets(text, imagePath, canvasWidth, canvasHeight
   ctx.fillRect(0, 0, width, height)
 
   // Calculate font size - match potential view sizing
-  // Width is the primary constraint, height is secondary
-  const maxTextHeight = Math.min(height * 0.2, width * 0.12)
-  const fontSize = calculateFontSize(ctx, text, width * 0.9, maxTextHeight)
+  // On small screens, use more horizontal space for better readability
+  const isSmallScreen = width < 600
+  const widthRatio = isSmallScreen ? 0.95 : 0.9
+  const heightRatio = isSmallScreen ? 0.16 : 0.12
+  const maxTextHeight = Math.min(height * 0.2, width * heightRatio)
+  const fontSize = calculateFontSize(ctx, text, width * widthRatio, maxTextHeight)
 
   // Draw text centered in upper portion
   ctx.fillStyle = '#fff'
