@@ -1,7 +1,6 @@
----
-title: Paper Repository
-date: 2026-01-07
----
+# 260107
+
+## Paper Repository
 
 A central place to store links and copies of the publications I've contributed to.
 

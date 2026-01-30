@@ -1,7 +1,6 @@
----
-title: Slate Star Codex scrapes and ebooks
-date: 2020-11-22
----
+# 201122
+
+## Slate Star Codex scrapes and ebooks
 
 I've been reading Slate Star Codex for a few years now, and recently got a Kindle ereader.
 So naturally I thought it'd be a good idea to scrape SSC and convert the scrape into a set of ebooks.

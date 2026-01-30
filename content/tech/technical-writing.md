@@ -1,7 +1,6 @@
----
-title: Technical Writing
-date: 2026-01-09
----
+# 260109
+
+## Technical Writing
 
 I publish technical notes and documentation as public gists.
 Topics have historically included:

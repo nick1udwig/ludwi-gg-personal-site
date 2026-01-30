@@ -483,6 +483,10 @@ h1, h2, h3 {
   letter-spacing: -0.02em;
 }
 
+.journal-list + .journal-heading {
+  margin-top: 4rem;
+}
+
 .journal-list {
   list-style: none;
 }
