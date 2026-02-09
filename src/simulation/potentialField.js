@@ -42,7 +42,11 @@ function getTextLayoutConfig(canvasWidth, canvasHeight) {
   return {
     widthRatio,
     heightRatio,
-    maxTextHeight: Math.min(canvasHeight * 0.2, canvasWidth * heightRatio)
+    maxTextHeight: Math.min(canvasHeight * 0.2, canvasWidth * heightRatio),
+    textYRatio: isSmallScreen ? 0.22 : 0.15,
+    imgYRatio: isSmallScreen ? 0.35 : 0.28,
+    imgMaxWidthRatio: isSmallScreen ? 0.7 : 0.55,
+    imgMaxHeightRatio: 0.55,
   }
 }
 
@@ -67,7 +71,7 @@ export async function generatePotentialView(text, imagePath, canvasWidth, canvas
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
 
-  const textY = canvasHeight * 0.15
+  const textY = canvasHeight * layout.textYRatio
   ctx.fillText(text, canvasWidth / 2, textY)
 
   // Load and draw headshot
@@ -75,8 +79,8 @@ export async function generatePotentialView(text, imagePath, canvasWidth, canvas
     try {
       const img = await getCachedImage(imagePath)
 
-      const imgMaxHeight = canvasHeight * 0.65
-      const imgMaxWidth = canvasWidth * 0.55
+      const imgMaxHeight = canvasHeight * layout.imgMaxHeightRatio
+      const imgMaxWidth = canvasWidth * layout.imgMaxWidthRatio
       const imgAspect = img.width / img.height
 
       let imgWidth, imgHeight
@@ -89,7 +93,7 @@ export async function generatePotentialView(text, imagePath, canvasWidth, canvas
       }
 
       const imgX = (canvasWidth - imgWidth) / 2
-      const imgY = canvasHeight * 0.28
+      const imgY = canvasHeight * layout.imgYRatio
 
       ctx.drawImage(img, imgX, imgY, imgWidth, imgHeight)
     } catch (e) {
@@ -136,7 +140,7 @@ export async function generateTargets(text, imagePath, canvasWidth, canvasHeight
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
 
-  const textY = height * 0.15
+  const textY = height * layout.textYRatio
   ctx.fillText(text, width / 2, textY)
 
   // Load and draw headshot below text
@@ -145,8 +149,8 @@ export async function generateTargets(text, imagePath, canvasWidth, canvasHeight
       const img = await getCachedImage(imagePath)
 
       // Calculate image size and position - match potential view
-      const imgMaxHeight = height * 0.65
-      const imgMaxWidth = width * 0.55
+      const imgMaxHeight = height * layout.imgMaxHeightRatio
+      const imgMaxWidth = width * layout.imgMaxWidthRatio
       const imgAspect = img.width / img.height
 
       let imgWidth, imgHeight
@@ -159,7 +163,7 @@ export async function generateTargets(text, imagePath, canvasWidth, canvasHeight
       }
 
       const imgX = (width - imgWidth) / 2
-      const imgY = height * 0.28
+      const imgY = height * layout.imgYRatio
 
       // Draw image to canvas
       ctx.drawImage(img, imgX, imgY, imgWidth, imgHeight)
@@ -181,7 +185,7 @@ export async function generateTargets(text, imagePath, canvasWidth, canvasHeight
   const imagePixels = []
 
   // Dividing line between text and image region (text is in top ~25%)
-  const textBottomY = height * 0.25
+  const textBottomY = height * (layout.textYRatio + 0.10)
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
