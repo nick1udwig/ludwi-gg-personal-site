@@ -484,7 +484,8 @@ h1, h2, h3 {
 }
 
 .journal-list + .journal-heading {
-  margin-top: 4rem;
+  margin-top: 5rem;
+  padding-top: 1rem;
 }
 
 .journal-list {
