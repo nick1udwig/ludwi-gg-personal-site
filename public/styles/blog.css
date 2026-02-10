@@ -1,4 +1,17 @@
 /* Blog post styles */
+
+/* Reading progress bar */
+.reading-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0%;
+  height: 2px;
+  background: var(--particle-color);
+  z-index: 10000;
+  transition: width 0.1s linear;
+}
+
 .post-container {
   max-width: 42rem;
   margin: 0 auto;
@@ -7,11 +20,13 @@
 
 .post-header {
   margin-bottom: 3rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--divider);
 }
 
 .post-title {
   font-size: 2.5rem;
-  font-weight: 400;
+  font-weight: 600;
   margin-bottom: 1rem;
   color: var(--text-primary);
   letter-spacing: -0.02em;
@@ -21,7 +36,7 @@
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.75rem;
   color: var(--text-muted);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
 }
 
 .post-content {
@@ -86,6 +101,7 @@
   border-radius: 6px;
   overflow-x: auto;
   margin-bottom: 1.5rem;
+  border: 1px solid var(--divider);
 }
 
 .post-content pre code {
@@ -94,11 +110,13 @@
 }
 
 .post-content blockquote {
-  border-left: 3px solid var(--divider);
+  border-left: 3px solid var(--particle-color);
   margin-left: 0;
-  padding-left: 1.5rem;
+  padding: 1rem 1.5rem;
   font-style: italic;
   color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border-radius: 0 6px 6px 0;
 }
 
 .post-content em {
@@ -118,14 +136,20 @@
   color: var(--text-muted);
   text-decoration: none;
   margin-bottom: 2rem;
-  transition: color 0.2s ease;
+  transition: color 0.2s ease, gap 0.2s ease;
 }
 
 .back-link:hover {
   color: var(--particle-color);
+  gap: 0.75rem;
 }
 
 .back-link svg {
   width: 16px;
   height: 16px;
+  transition: transform 0.2s ease;
+}
+
+.back-link:hover svg {
+  transform: translateX(-3px);
 }

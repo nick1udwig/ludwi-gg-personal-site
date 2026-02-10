@@ -13,6 +13,22 @@ export function isoDate(date) {
 }
 
 /**
+ * Shared footer HTML
+ */
+function footerHtml() {
+  return `  <footer class="site-footer">
+    <div class="footer-links">
+      <a href="https://github.com/nick1udwig" target="_blank" rel="noopener noreferrer">GitHub</a>
+      <span class="footer-separator">/</span>
+      <a href="https://x.com/nick1udwig" target="_blank" rel="noopener noreferrer">X</a>
+      <span class="footer-separator">/</span>
+      <a href="/pdfs/resume.pdf" download="2601-nick-ludwig-resume.pdf">Resume</a>
+    </div>
+    <p class="footer-text">&copy; Nick Ludwig</p>
+  </footer>`
+}
+
+/**
  * HTML template for a single blog/tech post
  */
 export function postTemplate(title, date, content, section = 'blog') {
@@ -37,6 +53,8 @@ export function postTemplate(title, date, content, section = 'blog') {
   <link rel="stylesheet" href="/styles/blog.css">
 </head>
 <body>
+  <div class="reading-progress" aria-hidden="true"></div>
+
   <article class="post-container">
     <a href="${backLink}" class="back-link">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -55,9 +73,21 @@ export function postTemplate(title, date, content, section = 'blog') {
     </div>
   </article>
 
-  <footer class="site-footer">
-    <p class="footer-text">&copy; Nick Ludwig</p>
-  </footer>
+${footerHtml()}
+
+  <script>
+    (function() {
+      var bar = document.querySelector('.reading-progress');
+      if (!bar) return;
+      var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reducedMotion) { bar.style.display = 'none'; return; }
+      window.addEventListener('scroll', function() {
+        var h = document.documentElement.scrollHeight - window.innerHeight;
+        var pct = h > 0 ? (window.scrollY / h) * 100 : 0;
+        bar.style.width = pct + '%';
+      }, { passive: true });
+    })();
+  </script>
 </body>
 </html>`
 }
@@ -118,9 +148,7 @@ ${listHtml}
     </ul>
   </section>
 
-  <footer class="site-footer">
-    <p class="footer-text">&copy; Nick Ludwig</p>
-  </footer>
+${footerHtml()}
 </body>
 </html>`
 }

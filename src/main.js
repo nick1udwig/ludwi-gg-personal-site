@@ -163,6 +163,86 @@ async function init() {
   // Start simulation
   simulation.start()
 
+  // --- Scroll indicator auto-hide ---
+  const scrollIndicator = document.querySelector('.scroll-indicator')
+  if (scrollIndicator) {
+    // After the fadeIn completes, add breathing class
+    setTimeout(() => {
+      if (!scrollIndicator.classList.contains('hidden')) {
+        scrollIndicator.classList.add('visible')
+      }
+    }, 2000)
+
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 50) {
+        scrollIndicator.classList.add('hidden')
+        scrollIndicator.classList.remove('visible')
+      }
+    }, { passive: true })
+  }
+
+  // --- Hero scroll parallax ---
+  const heroSection = document.getElementById('hero')
+  if (heroSection) {
+    window.addEventListener('scroll', () => {
+      const heroHeight = heroSection.offsetHeight
+      const scrollY = window.scrollY
+      if (scrollY < heroHeight) {
+        const progress = scrollY / heroHeight
+        heroSection.style.opacity = 1 - progress * 0.6
+        heroSection.style.transform = `translateY(${-scrollY * 0.15}px)`
+      }
+    }, { passive: true })
+  }
+
+  // --- Animated wave divider ---
+  const wavePath = document.querySelector('.wave-path')
+  if (wavePath) {
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (!reducedMotion) {
+      let time = 0
+      function animateWave() {
+        time += 0.02
+        let d = 'M0,30 '
+        for (let x = 0; x <= 1200; x += 10) {
+          const y = 30
+            + Math.sin(x * 0.01 + time) * 6
+            + Math.sin(x * 0.025 + time * 1.5) * 3
+            + Math.sin(x * 0.005 + time * 0.5) * 4
+          d += `L${x},${y.toFixed(1)} `
+        }
+        wavePath.setAttribute('d', d)
+        requestAnimationFrame(animateWave)
+      }
+      animateWave()
+    }
+  }
+
+  // --- Scroll-triggered journal entry reveals ---
+  const journalEntries = document.querySelectorAll('.journal-entry')
+  if (journalEntries.length > 0) {
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reducedMotion) {
+      journalEntries.forEach(entry => {
+        entry.classList.add('revealed')
+      })
+    } else {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed')
+            observer.unobserve(entry.target)
+          }
+        })
+      }, { threshold: 0.1 })
+
+      journalEntries.forEach((entry, i) => {
+        entry.style.animationDelay = `${i * 0.08}s`
+        observer.observe(entry)
+      })
+    }
+  }
+
   // Expose for debugging (remove in production)
   if (import.meta.env.DEV) {
     window.simulation = simulation
