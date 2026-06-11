@@ -17,23 +17,53 @@ const DIST_DIR = path.join(ROOT_DIR, 'dist')
 
 const app = express()
 const PORT = process.env.PORT || 3000
+app.disable('x-powered-by')
 
 // Determine if we're serving from dist (production) or source (development)
 const isProduction = fs.existsSync(DIST_DIR) && fs.existsSync(path.join(DIST_DIR, 'index.html'))
 
+const assetCache = isProduction
+  ? { maxAge: '1y', immutable: true }
+  : { maxAge: 0 }
+
+const styleCache = isProduction
+  ? { maxAge: '1h' }
+  : { maxAge: 0 }
+
+const rootStaticCache = {
+  index: false,
+  maxAge: isProduction ? '1d' : 0
+}
+
+const pdfCache = {
+  maxAge: isProduction ? '7d' : 0,
+  setHeaders(res, filePath) {
+    if (!isProduction) return
+
+    const maxAge = path.basename(filePath) === 'resume.pdf'
+      ? 60 * 60
+      : 7 * 24 * 60 * 60
+    res.setHeader('Cache-Control', `public, max-age=${maxAge}`)
+  }
+}
+
+function setHtmlCache(res) {
+  res.set('Cache-Control', 'no-cache')
+}
+
 // Serve static files
 if (isProduction) {
   // Production: serve from dist
-  app.use('/assets', express.static(path.join(DIST_DIR, 'assets')))
-  app.use('/styles', express.static(path.join(DIST_DIR, 'styles')))
-  app.use('/pdfs', express.static(path.join(DIST_DIR, 'pdfs')))
-  app.use(express.static(DIST_DIR, { index: false })) // index: false so we handle / ourselves
+  app.use('/assets', express.static(path.join(DIST_DIR, 'assets'), assetCache))
+  app.use('/styles', express.static(path.join(DIST_DIR, 'styles'), styleCache))
+  app.use('/pdfs', express.static(path.join(DIST_DIR, 'pdfs'), pdfCache))
+  app.use(express.static(DIST_DIR, rootStaticCache)) // index: false so we handle / ourselves
 } else {
   // Development: serve from source
-  app.use('/styles', express.static(path.join(ROOT_DIR, 'styles')))
+  app.use('/styles', express.static(path.join(PUBLIC_DIR, 'styles'), styleCache))
   app.use('/src', express.static(path.join(ROOT_DIR, 'src')))
-  app.use('/pdfs', express.static(path.join(PUBLIC_DIR, 'pdfs')))
-  app.use(express.static(PUBLIC_DIR, { index: false }))
+  app.use('/pdfs', express.static(path.join(PUBLIC_DIR, 'pdfs'), pdfCache))
+  app.use(express.static(PUBLIC_DIR, rootStaticCache))
 }
 
 // Homepage - inject post lists dynamically
@@ -49,6 +79,7 @@ app.get('/', (req, res) => {
     let indexHtml = fs.readFileSync(indexPath, 'utf-8')
     indexHtml = injectPostLists(indexHtml, blogPosts, techPosts)
 
+    setHtmlCache(res)
     res.type('html').send(indexHtml)
   } catch (err) {
     console.error('Error serving homepage:', err)
@@ -61,6 +92,7 @@ app.get('/blog', (req, res) => {
   try {
     const posts = getPostsFromDirectory(BLOG_DIR)
     const html = listPageTemplate('Blog', posts, '/blog', 'blog')
+    setHtmlCache(res)
     res.type('html').send(html)
   } catch (err) {
     console.error('Error serving blog list:', err)
@@ -80,6 +112,7 @@ app.get('/blog/:slug', (req, res) => {
 
     const post = parseMarkdownFile(filePath)
     const html = postTemplate(post.title, post.date, post.content, 'blog')
+    setHtmlCache(res)
     res.type('html').send(html)
   } catch (err) {
     console.error('Error serving blog post:', err)
@@ -92,6 +125,7 @@ app.get('/tech', (req, res) => {
   try {
     const posts = getPostsFromDirectory(TECH_DIR)
     const html = listPageTemplate('Technical Writing', posts, '/tech', 'tech')
+    setHtmlCache(res)
     res.type('html').send(html)
   } catch (err) {
     console.error('Error serving tech list:', err)
@@ -111,6 +145,7 @@ app.get('/tech/:slug', (req, res) => {
 
     const post = parseMarkdownFile(filePath)
     const html = postTemplate(post.title, post.date, post.content, 'tech')
+    setHtmlCache(res)
     res.type('html').send(html)
   } catch (err) {
     console.error('Error serving tech post:', err)

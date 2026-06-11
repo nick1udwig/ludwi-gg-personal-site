@@ -2,6 +2,8 @@ import fs from 'fs'
 import path from 'path'
 import { marked } from 'marked'
 
+const fileCache = new Map()
+
 /**
  * Parse markdown file with H1 date (YYMMDD) and H2 title format
  *
@@ -13,8 +15,23 @@ import { marked } from 'marked'
  * Content here...
  */
 export function parseMarkdownFile(filePath) {
+  const stat = fs.statSync(filePath)
+  const cached = fileCache.get(filePath)
+
+  if (cached && cached.mtimeMs === stat.mtimeMs && cached.size === stat.size) {
+    return cached.post
+  }
+
   const content = fs.readFileSync(filePath, 'utf-8')
-  return parseMarkdown(content, path.basename(filePath, '.md'))
+  const post = parseMarkdown(content, path.basename(filePath, '.md'))
+
+  fileCache.set(filePath, {
+    mtimeMs: stat.mtimeMs,
+    size: stat.size,
+    post
+  })
+
+  return post
 }
 
 export function parseMarkdown(content, slug) {

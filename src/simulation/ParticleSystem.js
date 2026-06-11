@@ -58,6 +58,13 @@ export class ParticleSystem {
 
     // Pointer position for repulsion effect (null = not active)
     this.pointer = null
+
+    // Visibility and lazy potential-view generation
+    this.isVisible = true
+    this.potentialViewKey = null
+    this.potentialViewPromiseKey = null
+    this.potentialViewPromise = null
+    this.potentialIdleId = null
   }
 
   /**
@@ -85,25 +92,24 @@ export class ParticleSystem {
       this.currentTargets = targets
     }
 
-    // Generate the potential view image
-    const potentialCanvas = await generatePotentialView(
-      this.text,
-      this.imagePath,
-      this.width,
-      this.height,
-      this.renderer.particleColor
-    )
-    this.renderer.setPotentialImage(potentialCanvas)
-
     this.initialized = true
+    this.schedulePotentialPrebuild()
     return this
   }
 
   /**
    * Toggle between particle view and potential view
    */
-  toggleView() {
-    return this.renderer.togglePotentialView()
+  async toggleView() {
+    const willShowPotential = !this.renderer.showPotentialView
+
+    if (willShowPotential) {
+      await this.preparePotentialView()
+    }
+
+    const isPotentialView = this.renderer.togglePotentialView()
+    this.resume()
+    return isPotentialView
   }
 
   /**
@@ -154,6 +160,10 @@ export class ParticleSystem {
   render(alpha, dt = 1 / 60) {
     if (!this.initialized) return
     this.renderer.render(this.particles, alpha, dt)
+
+    if (this.renderer.canSleep()) {
+      this.pause()
+    }
   }
 
   /**
@@ -164,6 +174,7 @@ export class ParticleSystem {
     this.width = newWidth
     this.height = newHeight
     this.renderer.setDimensions(newWidth, newHeight)
+    this.invalidatePotentialView()
 
     const newCount = getParticleCount(newWidth)
 
@@ -181,20 +192,17 @@ export class ParticleSystem {
       )
       this.particles.setTargets(targets)
       this.currentTargets = targets
-
-      // Also regenerate potential view
-      const potentialCanvas = await generatePotentialView(
-        this.text,
-        this.imagePath,
-        newWidth,
-        newHeight,
-        this.renderer.particleColor
-      )
-      this.renderer.setPotentialImage(potentialCanvas)
     } catch (e) {
       const targets = generateTargetsSimple(this.text, newWidth, newHeight, newCount)
       this.particles.setTargets(targets)
       this.currentTargets = targets
+    }
+
+    if (this.renderer.showPotentialView) {
+      await this.preparePotentialView()
+      this.renderer.render(this.particles, 1, 0)
+    } else {
+      this.schedulePotentialPrebuild()
     }
 
     this.hasSettled = false
@@ -211,6 +219,7 @@ export class ParticleSystem {
     this.observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
+          this.isVisible = entry.isIntersecting
           if (entry.isIntersecting) {
             this.resume()
           } else {
@@ -274,7 +283,7 @@ export class ParticleSystem {
    * Resume simulation
    */
   resume() {
-    if (!this.prefersReducedMotion && !document.hidden && this.initialized) {
+    if (!this.prefersReducedMotion && !document.hidden && this.initialized && this.isVisible) {
       this.gameLoop.start()
     }
   }
@@ -295,5 +304,82 @@ export class ParticleSystem {
     this.observer.disconnect()
     document.removeEventListener('visibilitychange', this.visibilityHandler)
     this.renderer.destroy()
+    this.cancelPotentialPrebuild()
+  }
+
+  /**
+   * Generate the static potential view only after the first particle frame,
+   * or immediately if the user asks for it before the idle task runs.
+   */
+  async preparePotentialView() {
+    const key = this.getPotentialViewKey()
+
+    if (this.renderer.potentialImage && this.potentialViewKey === key) {
+      return this.renderer.potentialImage
+    }
+
+    if (this.potentialViewPromise && this.potentialViewPromiseKey === key) {
+      return this.potentialViewPromise
+    }
+
+    this.potentialViewPromiseKey = key
+    this.potentialViewPromise = generatePotentialView(
+      this.text,
+      this.imagePath,
+      this.width,
+      this.height,
+      this.renderer.particleColor
+    ).then((potentialCanvas) => {
+      if (this.getPotentialViewKey() === key) {
+        this.renderer.setPotentialImage(potentialCanvas)
+        this.potentialViewKey = key
+      }
+      return potentialCanvas
+    }).finally(() => {
+      if (this.potentialViewPromiseKey === key) {
+        this.potentialViewPromise = null
+        this.potentialViewPromiseKey = null
+      }
+    })
+
+    return this.potentialViewPromise
+  }
+
+  schedulePotentialPrebuild() {
+    if (!this.initialized || this.potentialIdleId || this.renderer.potentialImage) return
+
+    const build = () => {
+      this.potentialIdleId = null
+      if (!this.renderer.showPotentialView) {
+        this.preparePotentialView()
+      }
+    }
+
+    if ('requestIdleCallback' in window) {
+      this.potentialIdleId = window.requestIdleCallback(build, { timeout: 1500 })
+    } else {
+      this.potentialIdleId = window.setTimeout(build, 400)
+    }
+  }
+
+  cancelPotentialPrebuild() {
+    if (!this.potentialIdleId) return
+
+    if ('cancelIdleCallback' in window) {
+      window.cancelIdleCallback(this.potentialIdleId)
+    } else {
+      window.clearTimeout(this.potentialIdleId)
+    }
+    this.potentialIdleId = null
+  }
+
+  invalidatePotentialView() {
+    this.cancelPotentialPrebuild()
+    this.potentialViewKey = null
+    this.renderer.setPotentialImage(null)
+  }
+
+  getPotentialViewKey() {
+    return `${this.width}x${this.height}:${this.renderer.particleColor}`
   }
 }

@@ -53,8 +53,10 @@ export class GameLoop {
     // Render with interpolation (pass frameTime for transition animations)
     this.onRender(alpha, frameTime)
 
-    // Schedule next frame
-    this.rafId = requestAnimationFrame(this.tick)
+    // Schedule next frame unless the owner stopped the loop during update/render.
+    if (this.running) {
+      this.rafId = requestAnimationFrame(this.tick)
+    }
   }
 
   /**

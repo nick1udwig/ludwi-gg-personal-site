@@ -15,6 +15,16 @@ export function isoDate(date) {
 /**
  * Shared footer HTML
  */
+const fontStylesheetHref = 'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Playfair+Display:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&display=swap'
+
+function fontLinksHtml() {
+  return `  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="${fontStylesheetHref}" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="${fontStylesheetHref}" rel="stylesheet"></noscript>`
+}
+
 function footerHtml() {
   return `  <footer class="site-footer">
     <div class="footer-links">
@@ -44,10 +54,7 @@ export function postTemplate(title, date, content, section = 'blog') {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtml(title)} - Nick Ludwig</title>
 
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Playfair+Display:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&display=swap" rel="stylesheet">
+${fontLinksHtml()}
 
   <link rel="stylesheet" href="/styles/main.css">
   <link rel="stylesheet" href="/styles/blog.css">
@@ -81,11 +88,20 @@ ${footerHtml()}
       if (!bar) return;
       var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (reducedMotion) { bar.style.display = 'none'; return; }
-      window.addEventListener('scroll', function() {
+      var ticking = false;
+      function updateProgress() {
+        ticking = false;
         var h = document.documentElement.scrollHeight - window.innerHeight;
         var pct = h > 0 ? (window.scrollY / h) * 100 : 0;
-        bar.style.width = pct + '%';
+        bar.style.transform = 'scaleX(' + (pct / 100) + ')';
+      }
+      window.addEventListener('scroll', function() {
+        if (!ticking) {
+          ticking = true;
+          requestAnimationFrame(updateProgress);
+        }
       }, { passive: true });
+      updateProgress();
     })();
   </script>
 </body>
@@ -125,10 +141,7 @@ export function listPageTemplate(title, posts, urlPrefix, section) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtml(title)} - Nick Ludwig</title>
 
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Playfair+Display:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&display=swap" rel="stylesheet">
+${fontLinksHtml()}
 
   <link rel="stylesheet" href="/styles/main.css">
   <link rel="stylesheet" href="/styles/blog.css">

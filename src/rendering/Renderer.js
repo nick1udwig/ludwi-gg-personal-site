@@ -72,6 +72,13 @@ export class Renderer {
   }
 
   /**
+   * Whether the renderer is showing a static image and can skip animation frames.
+   */
+  canSleep() {
+    return this.showPotentialView && !this.isTransitioning && this.transitionProgress === 1
+  }
+
+  /**
    * Update transition animation
    * @param {number} dt - Delta time in seconds
    */

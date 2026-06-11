@@ -9,13 +9,13 @@
  */
 export function setupCanvas(canvas) {
   const rect = canvas.parentElement.getBoundingClientRect()
-  const dpr = Math.min(window.devicePixelRatio || 1, 2) // Cap at 2x for performance
+  const dpr = getCanvasDpr(rect.width)
 
   const width = rect.width
   const height = rect.height
 
-  canvas.width = width * dpr
-  canvas.height = height * dpr
+  canvas.width = Math.round(width * dpr)
+  canvas.height = Math.round(height * dpr)
   canvas.style.width = `${width}px`
   canvas.style.height = `${height}px`
 
@@ -77,9 +77,9 @@ export function setupResizeHandler(canvas, onResize) {
         const oldHeight = currentHeight
 
         // Update canvas size
-        const dpr = Math.min(window.devicePixelRatio || 1, 2)
-        canvas.width = newWidth * dpr
-        canvas.height = newHeight * dpr
+        const dpr = getCanvasDpr(newWidth)
+        canvas.width = Math.round(newWidth * dpr)
+        canvas.height = Math.round(newHeight * dpr)
         canvas.style.width = `${newWidth}px`
         canvas.style.height = `${newHeight}px`
 
@@ -117,4 +117,13 @@ export function setupResizeHandler(canvas, onResize) {
       clearTimeout(resizeTimeout)
     }
   }
+}
+
+function getCanvasDpr(width) {
+  const dpr = window.devicePixelRatio || 1
+  const isMobileWidth = width < 768
+  const lowPowerDevice = navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4
+  const cap = isMobileWidth || lowPowerDevice ? 1.5 : 2
+
+  return Math.min(dpr, cap)
 }

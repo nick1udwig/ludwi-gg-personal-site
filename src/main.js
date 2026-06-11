@@ -42,6 +42,8 @@ async function init() {
   // Initialize asynchronously (loads image)
   await simulation.init()
 
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
   // Connect temperature slider
   if (temperatureSlider) {
     temperatureSlider.addEventListener('input', (e) => {
@@ -64,16 +66,32 @@ async function init() {
   }
 
   // Function to toggle view and update button state
-  function toggleView() {
-    const isPotentialView = simulation.toggleView()
-    if (viewToggle) {
-      viewToggle.classList.toggle('potential-active', isPotentialView)
+  let viewTogglePending = false
+  async function toggleView() {
+    if (viewTogglePending) return
 
-      // Remove shine hint after first interaction
-      if (!hasToggledView) {
-        hasToggledView = true
-        viewToggle.classList.remove('hint-shine')
+    viewTogglePending = true
+    if (viewToggle) {
+      viewToggle.setAttribute('aria-busy', 'true')
+    }
+
+    try {
+      const isPotentialView = await simulation.toggleView()
+
+      if (viewToggle) {
+        viewToggle.classList.toggle('potential-active', isPotentialView)
+
+        // Remove shine hint after first interaction
+        if (!hasToggledView) {
+          hasToggledView = true
+          viewToggle.classList.remove('hint-shine')
+        }
       }
+    } finally {
+      if (viewToggle) {
+        viewToggle.removeAttribute('aria-busy')
+      }
+      viewTogglePending = false
     }
   }
 
@@ -81,11 +99,10 @@ async function init() {
   // Works with both mouse (desktop) and touch (mobile)
 
   // Helper to get canvas-relative coordinates
-  function getCanvasCoords(clientX, clientY) {
-    const rect = canvas.getBoundingClientRect()
-    // Account for CSS scaling (canvas internal size vs display size)
-    const scaleX = canvas.width / rect.width
-    const scaleY = canvas.height / rect.height
+  function getCanvasCoords(clientX, clientY, rect = canvas.getBoundingClientRect()) {
+    // Particle positions use CSS pixels; the backing canvas may use a higher DPR.
+    const scaleX = simulation.width / rect.width
+    const scaleY = simulation.height / rect.height
     return {
       x: (clientX - rect.left) * scaleX,
       y: (clientY - rect.top) * scaleY
@@ -94,8 +111,7 @@ async function init() {
 
   // Mouse events (desktop)
   canvas.addEventListener('mousemove', (e) => {
-    const { x, y } = getCanvasCoords(e.clientX, e.clientY)
-    simulation.setPointer(x, y)
+    simulation.setPointer(e.offsetX, e.offsetY)
   })
 
   canvas.addEventListener('mouseleave', () => {
@@ -108,10 +124,12 @@ async function init() {
   // Touch events (mobile) - repulsion on drag, tap to toggle
   let touchStartX = 0
   let touchStartY = 0
+  let touchRect = null
   const TAP_THRESHOLD = 10 // pixels - if moved more than this, it's a drag
 
   canvas.addEventListener('touchstart', (e) => {
     if (e.touches.length === 1) {
+      touchRect = canvas.getBoundingClientRect()
       touchStartX = e.touches[0].clientX
       touchStartY = e.touches[0].clientY
     }
@@ -121,7 +139,7 @@ async function init() {
     if (e.touches.length === 1) {
       const touch = e.touches[0]
       // Update repulsion position while dragging
-      const { x, y } = getCanvasCoords(touch.clientX, touch.clientY)
+      const { x, y } = getCanvasCoords(touch.clientX, touch.clientY, touchRect || undefined)
       simulation.setPointer(x, y)
     }
   }, { passive: true })
@@ -129,6 +147,7 @@ async function init() {
   canvas.addEventListener('touchend', (e) => {
     // Clear repulsion
     simulation.clearPointer()
+    touchRect = null
 
     // Prevent double-firing on devices that fire both touch and click
     e.preventDefault()
@@ -147,6 +166,7 @@ async function init() {
 
   canvas.addEventListener('touchcancel', () => {
     simulation.clearPointer()
+    touchRect = null
   })
 
   // Toggle button click
@@ -173,35 +193,57 @@ async function init() {
       }
     }, 2000)
 
-    window.addEventListener('scroll', () => {
-      if (window.scrollY > 50) {
-        scrollIndicator.classList.add('hidden')
-        scrollIndicator.classList.remove('visible')
-      }
-    }, { passive: true })
+    window.addEventListener('scroll', updateScrollEffects, { passive: true })
   }
 
   // --- Hero scroll parallax ---
   const heroSection = document.getElementById('hero')
-  if (heroSection) {
-    window.addEventListener('scroll', () => {
-      const heroHeight = heroSection.offsetHeight
+  let heroHeight = heroSection ? heroSection.offsetHeight : 0
+  let scrollTicking = false
+
+  function updateScrollEffects() {
+    if (scrollTicking) return
+
+    scrollTicking = true
+    requestAnimationFrame(() => {
+      scrollTicking = false
       const scrollY = window.scrollY
-      if (scrollY < heroHeight) {
+
+      if (scrollIndicator && scrollY > 50) {
+        scrollIndicator.classList.add('hidden')
+        scrollIndicator.classList.remove('visible')
+      }
+
+      if (heroSection && !reducedMotion && scrollY < heroHeight) {
         const progress = scrollY / heroHeight
         heroSection.style.opacity = 1 - progress * 0.6
         heroSection.style.transform = `translateY(${-scrollY * 0.15}px)`
       }
+    })
+  }
+
+  if (heroSection && !reducedMotion) {
+    window.addEventListener('scroll', updateScrollEffects, { passive: true })
+    window.addEventListener('resize', () => {
+      heroHeight = heroSection.offsetHeight
+      updateScrollEffects()
     }, { passive: true })
   }
 
   // --- Animated wave divider ---
   const wavePath = document.querySelector('.wave-path')
   if (wavePath) {
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (!reducedMotion) {
       let time = 0
+      let waveRaf = null
+      let waveVisible = false
+
       function animateWave() {
+        if (!waveVisible || document.hidden) {
+          waveRaf = null
+          return
+        }
+
         time += 0.02
         let d = 'M0,30 '
         for (let x = 0; x <= 1200; x += 10) {
@@ -212,16 +254,29 @@ async function init() {
           d += `L${x},${y.toFixed(1)} `
         }
         wavePath.setAttribute('d', d)
-        requestAnimationFrame(animateWave)
+        waveRaf = requestAnimationFrame(animateWave)
       }
-      animateWave()
+
+      function startWave() {
+        if (!waveRaf && waveVisible && !document.hidden) {
+          waveRaf = requestAnimationFrame(animateWave)
+        }
+      }
+
+      const waveObserver = new IntersectionObserver((entries) => {
+        waveVisible = entries.some(entry => entry.intersectionRatio >= 0.25)
+        startWave()
+      }, { threshold: 0.25 })
+
+      waveObserver.observe(wavePath.closest('.wave-divider') || wavePath)
+
+      document.addEventListener('visibilitychange', startWave)
     }
   }
 
   // --- Scroll-triggered journal entry reveals ---
   const journalEntries = document.querySelectorAll('.journal-entry')
   if (journalEntries.length > 0) {
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (reducedMotion) {
       journalEntries.forEach(entry => {
         entry.classList.add('revealed')
