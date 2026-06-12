@@ -32,7 +32,7 @@ function footerHtml() {
       <span class="footer-separator">/</span>
       <a href="https://x.com/nick1udwig" target="_blank" rel="noopener noreferrer">X</a>
       <span class="footer-separator">/</span>
-      <a href="/pdfs/resume.pdf" download="2601-nick-ludwig-resume.pdf">Resume</a>
+      <a href="/pdfs/resume.pdf" download="26-nick-ludwig-resume.pdf">Resume</a>
     </div>
     <p class="footer-text">&copy; Nick Ludwig</p>
   </footer>`
