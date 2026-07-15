@@ -59,12 +59,11 @@ export class ParticleSystem {
     // Pointer position for repulsion effect (null = not active)
     this.pointer = null
 
-    // Visibility and lazy potential-view generation
+    // Visibility and on-demand potential-view generation
     this.isVisible = true
     this.potentialViewKey = null
     this.potentialViewPromiseKey = null
     this.potentialViewPromise = null
-    this.potentialIdleId = null
   }
 
   /**
@@ -93,7 +92,6 @@ export class ParticleSystem {
     }
 
     this.initialized = true
-    this.schedulePotentialPrebuild()
     return this
   }
 
@@ -201,8 +199,6 @@ export class ParticleSystem {
     if (this.renderer.showPotentialView) {
       await this.preparePotentialView()
       this.renderer.render(this.particles, 1, 0)
-    } else {
-      this.schedulePotentialPrebuild()
     }
 
     this.hasSettled = false
@@ -304,12 +300,10 @@ export class ParticleSystem {
     this.observer.disconnect()
     document.removeEventListener('visibilitychange', this.visibilityHandler)
     this.renderer.destroy()
-    this.cancelPotentialPrebuild()
   }
 
   /**
-   * Generate the static potential view only after the first particle frame,
-   * or immediately if the user asks for it before the idle task runs.
+   * Generate the static potential view when the user first asks for it.
    */
   async preparePotentialView() {
     const key = this.getPotentialViewKey()
@@ -345,36 +339,7 @@ export class ParticleSystem {
     return this.potentialViewPromise
   }
 
-  schedulePotentialPrebuild() {
-    if (!this.initialized || this.potentialIdleId || this.renderer.potentialImage) return
-
-    const build = () => {
-      this.potentialIdleId = null
-      if (!this.renderer.showPotentialView) {
-        this.preparePotentialView()
-      }
-    }
-
-    if ('requestIdleCallback' in window) {
-      this.potentialIdleId = window.requestIdleCallback(build, { timeout: 1500 })
-    } else {
-      this.potentialIdleId = window.setTimeout(build, 400)
-    }
-  }
-
-  cancelPotentialPrebuild() {
-    if (!this.potentialIdleId) return
-
-    if ('cancelIdleCallback' in window) {
-      window.cancelIdleCallback(this.potentialIdleId)
-    } else {
-      window.clearTimeout(this.potentialIdleId)
-    }
-    this.potentialIdleId = null
-  }
-
   invalidatePotentialView() {
-    this.cancelPotentialPrebuild()
     this.potentialViewKey = null
     this.renderer.setPotentialImage(null)
   }

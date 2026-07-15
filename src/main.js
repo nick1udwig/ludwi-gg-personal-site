@@ -35,7 +35,7 @@ async function init() {
   // Create particle system
   const simulation = new ParticleSystem(canvas, {
     text: 'NICK LUDWIG',
-    imagePath: '/headshot.png',
+    imagePath: '/headshot.webp',
     initialTemperature: defaultTemp
   })
 
@@ -237,23 +237,36 @@ async function init() {
       let time = 0
       let waveRaf = null
       let waveVisible = false
+      let lastWaveUpdate = 0
+      const WAVE_FRAME_INTERVAL = 1000 / 30
 
-      function animateWave() {
+      function animateWave(timestamp) {
         if (!waveVisible || document.hidden) {
           waveRaf = null
+          lastWaveUpdate = 0
           return
         }
 
-        time += 0.02
-        let d = 'M0,30 '
-        for (let x = 0; x <= 1200; x += 10) {
-          const y = 30
-            + Math.sin(x * 0.01 + time) * 6
-            + Math.sin(x * 0.025 + time * 1.5) * 3
-            + Math.sin(x * 0.005 + time * 0.5) * 4
-          d += `L${x},${y.toFixed(1)} `
+        if (!lastWaveUpdate) {
+          lastWaveUpdate = timestamp - WAVE_FRAME_INTERVAL
         }
-        wavePath.setAttribute('d', d)
+
+        const elapsed = timestamp - lastWaveUpdate
+        if (elapsed >= WAVE_FRAME_INTERVAL) {
+          lastWaveUpdate = timestamp - (elapsed % WAVE_FRAME_INTERVAL)
+          time += Math.min(elapsed, 100) * 0.0012
+
+          let d = 'M0,30 '
+          for (let x = 0; x <= 1200; x += 20) {
+            const y = 30
+              + Math.sin(x * 0.01 + time) * 6
+              + Math.sin(x * 0.025 + time * 1.5) * 3
+              + Math.sin(x * 0.005 + time * 0.5) * 4
+            d += `L${x},${y.toFixed(1)} `
+          }
+          wavePath.setAttribute('d', d)
+        }
+
         waveRaf = requestAnimationFrame(animateWave)
       }
 

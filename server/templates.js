@@ -15,7 +15,7 @@ export function isoDate(date) {
 /**
  * Shared footer HTML
  */
-const fontStylesheetHref = 'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Playfair+Display:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&display=swap'
+const fontStylesheetHref = 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400..600&display=swap'
 
 function fontLinksHtml() {
   return `  <!-- Fonts -->
