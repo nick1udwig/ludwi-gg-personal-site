@@ -105,8 +105,17 @@ export class ParticleSystem {
       await this.preparePotentialView()
     }
 
-    const isPotentialView = this.renderer.togglePotentialView()
-    this.resume()
+    const isPotentialView = this.renderer.togglePotentialView(!this.prefersReducedMotion)
+
+    if (this.prefersReducedMotion) {
+      // The reduced-motion path keeps the game loop stopped, so draw the
+      // completed transition now instead of waiting for a frame that will
+      // never run.
+      this.renderer.render(this.particles, 1, 0)
+    } else {
+      this.resume()
+    }
+
     return isPotentialView
   }
 

@@ -35,7 +35,7 @@ async function init() {
   // Create particle system
   const simulation = new ParticleSystem(canvas, {
     text: 'NICK LUDWIG',
-    imagePath: '/headshot.webp',
+    imagePath: ['/headshot.webp', '/headshot.png'],
     initialTemperature: defaultTemp
   })
 

@@ -18,18 +18,31 @@ function loadImage(src) {
 
 // Image cache to avoid loading the same image twice
 let imageCache = null
-let imageCachePath = null
+let imageCacheKey = null
 
 /**
  * Get cached image or load if not cached
  */
 async function getCachedImage(path) {
-  if (imageCachePath === path && imageCache) {
+  const paths = Array.isArray(path) ? path : [path]
+  const cacheKey = paths.join('\n')
+
+  if (imageCacheKey === cacheKey && imageCache) {
     return imageCache
   }
-  imageCache = await loadImage(path)
-  imageCachePath = path
-  return imageCache
+
+  let lastError = null
+  for (const candidate of paths) {
+    try {
+      imageCache = await loadImage(candidate)
+      imageCacheKey = cacheKey
+      return imageCache
+    } catch (error) {
+      lastError = error
+    }
+  }
+
+  throw lastError || new Error('No image source was provided')
 }
 
 /**
@@ -108,7 +121,7 @@ export async function generatePotentialView(text, imagePath, canvasWidth, canvas
 /**
  * Generate target positions for particles to form text and headshot silhouette
  * @param {string} text - Text to render (e.g., "NICK LUDWIG")
- * @param {string} imagePath - Path to headshot image
+ * @param {string|string[]} imagePath - Headshot source(s), in preference order
  * @param {number} canvasWidth - Width of the main canvas
  * @param {number} canvasHeight - Height of the main canvas
  * @param {number} particleCount - Number of particles to generate targets for

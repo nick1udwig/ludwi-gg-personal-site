@@ -63,11 +63,19 @@ export class Renderer {
 
   /**
    * Toggle between particle view and potential view
+   * @param {boolean} animate - Whether to animate the transition
    */
-  togglePotentialView() {
+  togglePotentialView(animate = true) {
     this.showPotentialView = !this.showPotentialView
     this.transitionTarget = this.showPotentialView ? 1 : 0
-    this.isTransitioning = true
+
+    if (animate) {
+      this.isTransitioning = true
+    } else {
+      this.transitionProgress = this.transitionTarget
+      this.isTransitioning = false
+    }
+
     return this.showPotentialView
   }
 
